@@ -20,6 +20,7 @@ import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.impl.DefaultNetServer;
 import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.shareddata.SharedData;
+import org.vertx.java.core.sockjs.SockJSClient;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.core.spi.Action;
 
@@ -159,6 +160,11 @@ public class WrappedVertx implements VertxInternal {
   @Override
   public SockJSServer createSockJSServer(HttpServer httpServer) {
     return vertx.createSockJSServer(httpServer);
+  }
+
+  @Override
+  public SockJSClient createSockJSClient(HttpClient httpClient) {
+    return vertx.createSockJSClient(httpClient);
   }
 
   @Override

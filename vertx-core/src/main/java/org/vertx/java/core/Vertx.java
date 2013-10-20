@@ -26,6 +26,7 @@ import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.shareddata.SharedData;
+import org.vertx.java.core.sockjs.SockJSClient;
 import org.vertx.java.core.sockjs.SockJSServer;
 
 import java.net.InetSocketAddress;
@@ -78,6 +79,11 @@ public interface Vertx {
    * Create a SockJS server that wraps an HTTP server
    */
   SockJSServer createSockJSServer(HttpServer httpServer);
+
+  /**
+   * Create a SockJS client that wraps an HTTP client using raw websockets
+   */
+  SockJSClient createSockJSClient(HttpClient httpClient);
 
   /**
    * The File system object

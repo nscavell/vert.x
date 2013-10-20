@@ -41,7 +41,9 @@ import org.vertx.java.core.net.impl.DefaultNetClient;
 import org.vertx.java.core.net.impl.DefaultNetServer;
 import org.vertx.java.core.net.impl.ServerID;
 import org.vertx.java.core.shareddata.SharedData;
+import org.vertx.java.core.sockjs.SockJSClient;
 import org.vertx.java.core.sockjs.SockJSServer;
+import org.vertx.java.core.sockjs.impl.DefaultSockJSClient;
 import org.vertx.java.core.sockjs.impl.DefaultSockJSServer;
 import org.vertx.java.core.spi.Action;
 import org.vertx.java.core.spi.cluster.ClusterManager;
@@ -167,6 +169,11 @@ public class DefaultVertx implements VertxInternal {
 
   public SockJSServer createSockJSServer(HttpServer httpServer) {
     return new DefaultSockJSServer(this, httpServer);
+  }
+
+  @Override
+  public SockJSClient createSockJSClient(HttpClient httpClient) {
+    return new DefaultSockJSClient(this, httpClient);
   }
 
   public EventBus eventBus() {

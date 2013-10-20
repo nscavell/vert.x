@@ -2,12 +2,12 @@ package vertx.tests.core.eventbusbridge;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.http.HttpClient;
+import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.http.WebSocket;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.core.sockjs.SockJSClient;
+import org.vertx.java.core.sockjs.SockJSClientSocket;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.testframework.TestClientBase;
 
@@ -71,31 +71,180 @@ public class EventBusBridgeTestClient extends TestClientBase {
     });
   }
 
-  public void testSimple() {
-    HttpClient client = vertx.createHttpClient().setPort(8080);
-    // We use rawwebsocket transport
-    client.connectWebsocket("/eventbus/websocket", new Handler<WebSocket>() {
+  public void testRegister() {
+    final SockJSClient sockJSClient = vertx.createSockJSClient(vertx.createHttpClient().setPort(8080));
+    sockJSClient.open("eventbus", new Handler<SockJSClientSocket>() {
       @Override
-      public void handle(WebSocket websocket) {
-
-        // Register
-        JsonObject msg = new JsonObject().putString("type", "register").putString("address", "someaddress");
-        websocket.writeTextFrame(msg.encode());
-
-        // Send
-        msg = new JsonObject().putString("type", "send").putString("address", "someaddress").putString("body", "hello world");
-        websocket.writeTextFrame(msg.encode());
-
-        websocket.dataHandler(new Handler<Buffer>() {
+      public void handle(SockJSClientSocket sockjs) {
+        sockjs.registerHandler("test.register", new Handler<JsonObject>() {
           @Override
-          public void handle(Buffer buff) {
-            String msg = buff.toString();
-            JsonObject received = new JsonObject(msg);
-            tu.azzert(received.getString("body").equals("hello world"));
+          public void handle(JsonObject msg) {
+            tu.azzert(msg != null);
+            tu.azzert(msg.getString("body") != null);
+            tu.azzert(msg.getString("body").equals("Hello World !"));
             tu.testComplete();
           }
         });
+      }
+    });
+    vertx.setTimer(100, new Handler<Long>() {
+      @Override
+      public void handle(Long event) {
+        vertx.eventBus().publish("test.register", "Hello World !");
+      }
+    });
+  }
 
+  public void testUnregister() {
+    final SockJSClient sockJSClient = vertx.createSockJSClient(vertx.createHttpClient().setPort(8080));
+    sockJSClient.open("eventbus", new Handler<SockJSClientSocket>() {
+      @Override
+      public void handle(final SockJSClientSocket sockjs) {
+        final Handler<JsonObject> handler = new Handler<JsonObject>() {
+          @Override
+          public void handle(JsonObject event) {
+            tu.azzert(false);
+          }
+        };
+        sockjs.registerHandler("test.unregister", handler);
+        vertx.setTimer(100, new Handler<Long>() {
+          @Override
+          public void handle(Long event) {
+            sockjs.unregisterHandler("test.unregister", handler);
+            vertx.setTimer(100, new Handler<Long>() {
+              @Override
+              public void handle(Long event) {
+                vertx.eventBus().publish("test.unregister", "boom");
+              }
+            });
+          }
+        });
+      }
+    });
+    vertx.eventBus().registerHandler("test.unregister", new Handler<Message>() {
+      @Override
+      public void handle(Message event) {
+        // Delay test completion to ensure all destinations could be reached
+        vertx.setTimer(100, new Handler<Long>() {
+          @Override
+          public void handle(Long event) {
+            tu.testComplete();
+          }
+        });
+      }
+    });
+  }
+
+  public void testUnregister2() {
+    final SockJSClient sockJSClient = vertx.createSockJSClient(vertx.createHttpClient().setPort(8080));
+    sockJSClient.open("eventbus", new Handler<SockJSClientSocket>() {
+      @Override
+      public void handle(final SockJSClientSocket sockjs) {
+        final Handler<JsonObject> handler1 = new Handler<JsonObject>() {
+          @Override
+          public void handle(JsonObject event) {
+            vertx.setTimer(100, new Handler<Long>() {
+              @Override
+              public void handle(Long event) {
+                tu.testComplete();
+              }
+            });
+          }
+        };
+        final Handler<JsonObject> handler2 = new Handler<JsonObject>() {
+          @Override
+          public void handle(JsonObject event) {
+            tu.azzert(false);
+          }
+        };
+        sockjs.registerHandler("test.unregister", handler1);
+        sockjs.registerHandler("test.unregister", handler2);
+        // Delay then unregister
+        vertx.setTimer(100, new Handler<Long>() {
+          @Override
+          public void handle(Long event) {
+            sockjs.unregisterHandler("test.unregister", handler2);
+            vertx.setTimer(100, new Handler<Long>() {
+              @Override
+              public void handle(Long event) {
+                vertx.eventBus().publish("test.unregister", "boom");
+              }
+            });
+          }
+        });
+      }
+    });
+  }
+
+  public void testSend() {
+    vertx.eventBus().registerHandler("test.send", new Handler<Message<JsonObject>>() {
+      @Override
+      public void handle(Message<JsonObject> message) {
+        JsonObject expected = new JsonObject();
+        expected.putString("foo", "bar");
+        tu.azzert(message != null);
+        tu.azzert(message.body() != null);
+        tu.azzert(message.body().equals(expected));
+        tu.testComplete();
+      }
+    });
+
+    final SockJSClient sockJSClient = vertx.createSockJSClient(vertx.createHttpClient().setPort(8080));
+    sockJSClient.open("eventbus", new Handler<SockJSClientSocket>() {
+      @Override
+      public void handle(SockJSClientSocket sockjs) {
+        JsonObject msg = new JsonObject();
+        msg.putString("foo", "bar");
+        sockjs.send("test.send", msg);
+      }
+    });
+  }
+
+  public void testPublish() {
+    final int[] count = new int[1];
+
+    // register event bus handler
+    vertx.eventBus().registerHandler("test.publish", new Handler<Message<JsonObject>>() {
+      @Override
+      public void handle(Message<JsonObject> message) {
+        JsonObject expected = new JsonObject();
+        expected.putString("name", "nick");
+        tu.azzert(message != null);
+        tu.azzert(message.body() != null);
+        tu.azzert(message.body().equals(expected));
+        count[0]++;
+      }
+    });
+
+    final SockJSClient sockJSClient = vertx.createSockJSClient(vertx.createHttpClient().setPort(8080));
+    sockJSClient.open("eventbus", new Handler<SockJSClientSocket>() {
+      @Override
+      public void handle(SockJSClientSocket sockjs) {
+        // register sockjs handler
+        sockjs.registerHandler("test.publish", new Handler<JsonObject>() {
+          @Override
+          public void handle(JsonObject message) {
+            JsonObject expected = new JsonObject();
+            expected.putString("name", "nick");
+            tu.azzert(message != null);
+            tu.azzert(message.getObject("body") != null);
+            tu.azzert(message.getObject("body").equals(expected));
+            count[0]++;
+          }
+        });
+        // publish to all registered handlers
+        JsonObject msg = new JsonObject();
+        msg.putString("name", "nick");
+        sockjs.publish("test.publish", msg);
+      }
+    });
+
+    //TODO: Best way to verify the pub went to all event bus handlers ?
+    vertx.setTimer(100, new Handler<Long>() {
+      @Override
+      public void handle(Long event) {
+        tu.azzert(2 == count[0]);
+        tu.testComplete();
       }
     });
   }

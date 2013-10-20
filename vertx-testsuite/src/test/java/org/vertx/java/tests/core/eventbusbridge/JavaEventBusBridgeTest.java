@@ -38,7 +38,27 @@ public class JavaEventBusBridgeTest extends TestBase {
   }
 
   @Test
-  public void testSimple() throws Exception {
+  public void testRegister() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testUnregister() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testUnregister2() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testSend() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
+  public void testPublish() throws Exception {
     startTest(getMethodName());
   }
 }
