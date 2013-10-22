@@ -1,6 +1,7 @@
 package vertx.tests.core.eventbusbridge;
 
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.http.HttpServer;
@@ -10,6 +11,8 @@ import org.vertx.java.core.sockjs.SockJSClient;
 import org.vertx.java.core.sockjs.SockJSClientSocket;
 import org.vertx.java.core.sockjs.SockJSServer;
 import org.vertx.java.testframework.TestClientBase;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 /*
  * Copyright 2013 Red Hat, Inc.
@@ -87,10 +90,59 @@ public class EventBusBridgeTestClient extends TestClientBase {
         });
       }
     });
-    vertx.setTimer(100, new Handler<Long>() {
+    vertx.setTimer(300, new Handler<Long>() {
       @Override
       public void handle(Long event) {
         vertx.eventBus().publish("test.register", "Hello World !");
+      }
+    });
+  }
+
+  public void testRegisterWithResultHandler() {
+    final AtomicInteger count = new AtomicInteger();
+    final int expected = 4;
+
+    final SockJSClient sockJSClient = vertx.createSockJSClient(vertx.createHttpClient().setPort(8080));
+    sockJSClient.open("eventbus", new Handler<SockJSClientSocket>() {
+      @Override
+      public void handle(SockJSClientSocket sockjs) {
+        sockjs.registerHandler("test.register.resulthandler", new Handler<JsonObject>() {
+            @Override
+            public void handle(JsonObject msg) {
+              tu.azzert(msg != null);
+              tu.azzert(msg.getString("body") != null);
+              tu.azzert(msg.getString("body").equals("Hello World !"));
+              checkComplete(expected, count.incrementAndGet());
+            }
+          }, new AsyncResultHandler<Void>() {
+            @Override
+            public void handle(AsyncResult<Void> event) {
+              checkComplete(expected, count.incrementAndGet());
+            }
+          }
+        );
+
+        sockjs.registerHandler("test.register.resulthandler", new Handler<JsonObject>() {
+            @Override
+            public void handle(JsonObject msg) {
+              tu.azzert(msg != null);
+              tu.azzert(msg.getString("body") != null);
+              tu.azzert(msg.getString("body").equals("Hello World !"));
+              checkComplete(expected, count.incrementAndGet());
+            }
+          }, new AsyncResultHandler<Void>() {
+            @Override
+            public void handle(AsyncResult<Void> event) {
+              checkComplete(expected, count.incrementAndGet());
+            }
+          }
+        );
+      }
+    });
+    vertx.setTimer(300, new Handler<Long>() {
+      @Override
+      public void handle(Long event) {
+        vertx.eventBus().publish("test.register.resulthandler", "Hello World !");
       }
     });
   }
@@ -201,7 +253,7 @@ public class EventBusBridgeTestClient extends TestClientBase {
   }
 
   public void testPublish() {
-    final int[] count = new int[1];
+    final AtomicInteger count = new AtomicInteger(0);
 
     // register event bus handler
     vertx.eventBus().registerHandler("test.publish", new Handler<Message<JsonObject>>() {
@@ -212,7 +264,7 @@ public class EventBusBridgeTestClient extends TestClientBase {
         tu.azzert(message != null);
         tu.azzert(message.body() != null);
         tu.azzert(message.body().equals(expected));
-        count[0]++;
+        checkComplete(2, count.incrementAndGet());
       }
     });
 
@@ -229,7 +281,7 @@ public class EventBusBridgeTestClient extends TestClientBase {
             tu.azzert(message != null);
             tu.azzert(message.getObject("body") != null);
             tu.azzert(message.getObject("body").equals(expected));
-            count[0]++;
+            checkComplete(2, count.incrementAndGet());
           }
         });
         // publish to all registered handlers
@@ -238,14 +290,22 @@ public class EventBusBridgeTestClient extends TestClientBase {
         sockjs.publish("test.publish", msg);
       }
     });
+  }
 
-    //TODO: Best way to verify the pub went to all event bus handlers ?
-    vertx.setTimer(100, new Handler<Long>() {
-      @Override
-      public void handle(Long event) {
-        tu.azzert(2 == count[0]);
-        tu.testComplete();
-      }
-    });
+  private void checkComplete(int expected, int current) {
+    if (expected == current) {
+      tu.testComplete();
+    }
+  }
+
+  private void checkComplete(int expected, int current, long delay) {
+    if (expected == current) {
+      vertx.setTimer(delay, new Handler<Long>() {
+        @Override
+        public void handle(Long event) {
+          tu.testComplete();
+        }
+      });
+    }
   }
 }

@@ -1,5 +1,7 @@
 package org.vertx.java.core.sockjs;
 
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.streams.ExceptionSupport;
@@ -17,6 +19,16 @@ public interface SockJSClientSocket extends ExceptionSupport<SockJSClientSocket>
    * @param handler the handler which will receive messages
    */
   SockJSClientSocket registerHandler(String address, Handler<JsonObject> handler);
+
+  /**
+   * Register's a SockJS handler for the specified address with the vertx event bus
+   *
+   * @param address the event bus address
+   * @param handler the handler which will receive messages
+   * @param resultHandler the handler which will be called when the register has been
+   * propagated to all nodes of the vertx event bus.
+   */
+  SockJSClientSocket registerHandler(String address, Handler<JsonObject> handler, Handler<AsyncResult<Void>> resultHandler);
 
   /**
    * Unregister's a SockJS handler for the specified address. If no more local handlers are registered at this address,

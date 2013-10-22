@@ -43,6 +43,11 @@ public class JavaEventBusBridgeTest extends TestBase {
   }
 
   @Test
+  public void testRegisterWithResultHandler() throws Exception {
+    startTest(getMethodName());
+  }
+
+  @Test
   public void testUnregister() throws Exception {
     startTest(getMethodName());
   }

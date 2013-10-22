@@ -20,6 +20,7 @@ import org.vertx.java.core.*;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.eventbus.impl.JsonObjectMessage;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
@@ -159,6 +160,7 @@ public class EventBusBridge implements Handler<SockJSSocket> {
   private void internalHandleRegister(final SockJSSocket sock, JsonObject message, final String address, Map<String, Handler<Message>> handlers) {
     if (handlePreRegister(sock, address)) {
       final boolean debug = log.isDebugEnabled();
+      final String reply = message.getString("replyAddress");
       Match match = checkMatches(false, address, message);
       if (match.doesMatch) {
         Handler<Message> handler = new Handler<Message>() {
@@ -182,12 +184,29 @@ public class EventBusBridge implements Handler<SockJSSocket> {
           }
         };
         handlers.put(address, handler);
-        eb.registerHandler(address, handler);
+        if (reply != null) {
+          eb.registerHandler(address, handler, new AsyncResultHandler<Void>() {
+            @Override
+            public void handle(AsyncResult<Void> event) {
+              if (event.succeeded()) {
+                deliverMessage(sock, reply, new JsonObjectMessage(true, reply, new JsonObject().putString("result", "success")));
+              } else {
+                if (debug) log.debug("Could not register event bus handler for address " + address);
+                deliverMessage(sock, reply, new JsonObjectMessage(true, reply, new JsonObject().putString("result", "failure")));
+              }
+            }
+          });
+        } else {
+          eb.registerHandler(address, handler);
+        }
         handlePostRegister(sock, address);
       } else {
         // inbound match failed
         if (debug) {
           log.debug("Cannot register handler for address " + address + " because there is no inbound match");
+        }
+        if (reply != null) {
+          deliverMessage(sock, reply, new JsonObjectMessage(true, reply, new JsonObject().putString("result", "failure")));
         }
       }
     }
