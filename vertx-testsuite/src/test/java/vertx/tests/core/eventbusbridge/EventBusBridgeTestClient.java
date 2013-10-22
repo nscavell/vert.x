@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class EventBusBridgeTestClient extends TestClientBase {
 
   private HttpServer server;
+  private SockJSClient client;
 
   @Override
   public void start() {
@@ -50,6 +51,7 @@ public class EventBusBridgeTestClient extends TestClientBase {
       @Override
       public void handle(AsyncResult<HttpServer> result) {
         if (result.succeeded()) {
+          client = vertx.createSockJSClient(vertx.createHttpClient().setPort(8080));
           tu.appReady();
         } else {
           result.cause().printStackTrace();
@@ -61,6 +63,7 @@ public class EventBusBridgeTestClient extends TestClientBase {
 
   @Override
   public void stop() {
+    client.close();
     server.close(new Handler<AsyncResult<Void>>() {
       @Override
       public void handle(AsyncResult<Void> result) {
@@ -75,8 +78,7 @@ public class EventBusBridgeTestClient extends TestClientBase {
   }
 
   public void testRegister() {
-    final SockJSClient sockJSClient = vertx.createSockJSClient(vertx.createHttpClient().setPort(8080));
-    sockJSClient.open("eventbus", new Handler<SockJSClientSocket>() {
+    client.open("eventbus", new Handler<SockJSClientSocket>() {
       @Override
       public void handle(SockJSClientSocket sockjs) {
         sockjs.registerHandler("test.register", new Handler<JsonObject>() {
@@ -102,8 +104,7 @@ public class EventBusBridgeTestClient extends TestClientBase {
     final AtomicInteger count = new AtomicInteger();
     final int expected = 4;
 
-    final SockJSClient sockJSClient = vertx.createSockJSClient(vertx.createHttpClient().setPort(8080));
-    sockJSClient.open("eventbus", new Handler<SockJSClientSocket>() {
+    client.open("eventbus", new Handler<SockJSClientSocket>() {
       @Override
       public void handle(SockJSClientSocket sockjs) {
         sockjs.registerHandler("test.register.resulthandler", new Handler<JsonObject>() {
@@ -148,8 +149,7 @@ public class EventBusBridgeTestClient extends TestClientBase {
   }
 
   public void testUnregister() {
-    final SockJSClient sockJSClient = vertx.createSockJSClient(vertx.createHttpClient().setPort(8080));
-    sockJSClient.open("eventbus", new Handler<SockJSClientSocket>() {
+    client.open("eventbus", new Handler<SockJSClientSocket>() {
       @Override
       public void handle(final SockJSClientSocket sockjs) {
         final Handler<JsonObject> handler = new Handler<JsonObject>() {
@@ -188,8 +188,7 @@ public class EventBusBridgeTestClient extends TestClientBase {
   }
 
   public void testUnregister2() {
-    final SockJSClient sockJSClient = vertx.createSockJSClient(vertx.createHttpClient().setPort(8080));
-    sockJSClient.open("eventbus", new Handler<SockJSClientSocket>() {
+    client.open("eventbus", new Handler<SockJSClientSocket>() {
       @Override
       public void handle(final SockJSClientSocket sockjs) {
         final Handler<JsonObject> handler1 = new Handler<JsonObject>() {
@@ -219,7 +218,7 @@ public class EventBusBridgeTestClient extends TestClientBase {
             vertx.setTimer(100, new Handler<Long>() {
               @Override
               public void handle(Long event) {
-                vertx.eventBus().publish("test.unregister", "boom");
+                vertx.eventBus().publish("test.unregister", "blah");
               }
             });
           }
@@ -241,8 +240,7 @@ public class EventBusBridgeTestClient extends TestClientBase {
       }
     });
 
-    final SockJSClient sockJSClient = vertx.createSockJSClient(vertx.createHttpClient().setPort(8080));
-    sockJSClient.open("eventbus", new Handler<SockJSClientSocket>() {
+    client.open("eventbus", new Handler<SockJSClientSocket>() {
       @Override
       public void handle(SockJSClientSocket sockjs) {
         JsonObject msg = new JsonObject();
@@ -268,8 +266,7 @@ public class EventBusBridgeTestClient extends TestClientBase {
       }
     });
 
-    final SockJSClient sockJSClient = vertx.createSockJSClient(vertx.createHttpClient().setPort(8080));
-    sockJSClient.open("eventbus", new Handler<SockJSClientSocket>() {
+    client.open("eventbus", new Handler<SockJSClientSocket>() {
       @Override
       public void handle(SockJSClientSocket sockjs) {
         // register sockjs handler
