@@ -27,7 +27,7 @@ public class DefaultSockJSClientSocket implements SockJSClientSocket {
   private final Long timerId;
 
   private Handler<Void> closeHandler;
-  private Map<String, List<Handler<JsonObject>>> handlerMap = new HashMap<>();
+  private Map<String, List<Handler>> handlerMap = new HashMap<>();
   private Map<String, AsyncResult<Void>> registerReplyHandlerResults = new HashMap<>();
   private boolean closed;
 
@@ -54,15 +54,13 @@ public class DefaultSockJSClientSocket implements SockJSClientSocket {
         //TODO: Handle invalid messages from server
         JsonObject message = new JsonObject(buffer.toString());
         String address = message.getString("address");
-        Iterator<Handler<JsonObject>> iter = handlers(address);
+        Iterator<Handler> iter = handlers(address);
         while (iter.hasNext()) {
-          Handler<JsonObject> handler = iter.next();
+          Handler handler = iter.next();
           if (handler instanceof RegisterReplyHandler) {
             iter.remove(); // remove reply handlers
           }
-          JsonObject out = new JsonObject();
-          out.putValue("body", message.getField("body"));
-          handler.handle(out);
+          DefaultSockJSClientSocket.this.handle(handler, message.getField("body"));
         }
       }
     });
@@ -78,20 +76,20 @@ public class DefaultSockJSClientSocket implements SockJSClientSocket {
   }
 
   @Override
-  public SockJSClientSocket registerHandler(final String address, final Handler<JsonObject> handler) {
+  public <T> SockJSClientSocket registerHandler(final String address, final Handler<T> handler) {
     return registerHandler(address, handler, null);
   }
 
   @Override
-  public SockJSClientSocket registerHandler(String address, Handler<JsonObject> handler, Handler<AsyncResult<Void>> resultHandler) {
+  public <T> SockJSClientSocket registerHandler(String address, Handler<T> handler, Handler<AsyncResult<Void>> resultHandler) {
     internalRegister(address, handler, resultHandler, false);
     return this;
   }
 
   @Override
-  public SockJSClientSocket unregisterHandler(String address, Handler<JsonObject> handler) {
+  public <T> SockJSClientSocket unregisterHandler(String address, Handler<T> handler) {
     checkClosed();
-    List<Handler<JsonObject>> handlers = handlerMap.get(address);
+    List<Handler> handlers = handlerMap.get(address);
     if (handlers != null && handlers.remove(handler) && handlers.isEmpty()) {
       sendUnregister(address);
       handlerMap.remove(address);
@@ -139,12 +137,12 @@ public class DefaultSockJSClientSocket implements SockJSClientSocket {
     }
   }
 
-  private void internalRegister(String address, Handler<JsonObject> handler, Handler<AsyncResult<Void>> resultHandler, boolean isReplyHandler) {
+  private <T> void internalRegister(String address, Handler<T> handler, Handler<AsyncResult<Void>> resultHandler, boolean isReplyHandler) {
     checkClosed();
     String replyAddress = (resultHandler == null) ? null : address + ".io.vertx.reply";
 
     // register handler
-    List<Handler<JsonObject>> handlers = handlerMap.get(address);
+    List<Handler> handlers = handlerMap.get(address);
     if (handlers == null) {
       handlers = new ArrayList<>();
       handlerMap.put(address, handlers);
@@ -165,10 +163,10 @@ public class DefaultSockJSClientSocket implements SockJSClientSocket {
     }
   }
 
-  private Iterator<Handler<JsonObject>> handlers(String address) {
-    List<Handler<JsonObject>> handlers = handlerMap.get(address);
+  private Iterator<Handler> handlers(String address) {
+    List<Handler> handlers = handlerMap.get(address);
     if (handlers == null) {
-      List<Handler<JsonObject>> list = Collections.emptyList();
+      List<Handler> list = Collections.emptyList();
       return list.iterator();
     }
 
@@ -200,12 +198,24 @@ public class DefaultSockJSClientSocket implements SockJSClientSocket {
     JsonObject message = new JsonObject();
     message.putString("type", sendOrPub);
     message.putString("address", address);
-    message.putValue("body", body);
+    if (body instanceof byte[]) {
+      message.putBinary("body", (byte[]) body);
+    } else if (body instanceof Buffer) {
+      message.putBinary("body", ((Buffer) body).getBytes());
+    } else if (body instanceof Byte) {
+      message.putBinary("body", new byte[]{(Byte) body});
+    } else {
+      message.putValue("body", body);
+    }
     send(message.encode());
   }
 
   private void send(String message) {
     websocket.writeTextFrame(message);
+  }
+
+  private <T> void handle(Handler<T> handler, T message) {
+    handler.handle(message);
   }
 
   // Might as well cache this message since we're sending it every 5 seconds
@@ -230,8 +240,7 @@ public class DefaultSockJSClientSocket implements SockJSClientSocket {
 
     @Override
     public void handle(JsonObject message) {
-      JsonObject body = message.getObject("body");
-      RegisterResult result = new RegisterResult(body.getString("result"), address);
+      RegisterResult result = new RegisterResult(message.getString("result"), address);
       registerReplyHandlerResults.put(replyAddress, result);
       resultHandler.handle(result);
     }
