@@ -4,13 +4,8 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
-import org.vertx.java.core.sockjs.SockJSClient;
 import org.vertx.java.core.sockjs.SockJSClientSocket;
-import org.vertx.java.core.sockjs.SockJSServer;
-import org.vertx.java.testframework.TestClientBase;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -30,55 +25,20 @@ import java.util.concurrent.atomic.AtomicInteger;
  * under the License.
  *
  */
-public class EventBusBridgeTestClient extends TestClientBase {
-
-  private HttpServer server;
-  private SockJSClient client;
+public class EventBusBridgeTestClient extends AbstractBridgeTestClient {
 
   @Override
-  public void start() {
-    super.start();
-
-    server = vertx.createHttpServer();
-
-    JsonArray permitted = new JsonArray();
-    permitted.add(new JsonObject()); // Let everything through
-
-    SockJSServer sockJSServer = vertx.createSockJSServer(server);
-    sockJSServer.bridge(new JsonObject().putString("prefix", "/eventbus"), permitted, permitted);
-
-    server.listen(8080, new Handler<AsyncResult<HttpServer>>() {
-      @Override
-      public void handle(AsyncResult<HttpServer> result) {
-        if (result.succeeded()) {
-          client = vertx.createSockJSClient(vertx.createHttpClient().setPort(8080));
-          tu.appReady();
-        } else {
-          result.cause().printStackTrace();
-          tu.azzert(false, "Failed to listen");
-        }
-      }
-    });
+  protected boolean serverMode() {
+    return true;
   }
 
   @Override
-  public void stop() {
-    client.close();
-    server.close(new Handler<AsyncResult<Void>>() {
-      @Override
-      public void handle(AsyncResult<Void> result) {
-        if (result.succeeded()) {
-          EventBusBridgeTestClient.super.stop();
-        } else {
-          result.cause().printStackTrace();
-          tu.azzert(false, "Failed to listen");
-        }
-      }
-    });
+  protected boolean clientMode() {
+    return true;
   }
 
   public void testRegister() {
-    client.open("eventbus", new Handler<SockJSClientSocket>() {
+    connect(new Handler<SockJSClientSocket>() {
       @Override
       public void handle(SockJSClientSocket sockjs) {
         sockjs.registerHandler("test.register", new Handler<JsonObject>() {
@@ -104,7 +64,7 @@ public class EventBusBridgeTestClient extends TestClientBase {
     final AtomicInteger count = new AtomicInteger();
     final int expected = 4;
 
-    client.open("eventbus", new Handler<SockJSClientSocket>() {
+    connect(new Handler<SockJSClientSocket>() {
       @Override
       public void handle(SockJSClientSocket sockjs) {
         sockjs.registerHandler("test.register.resulthandler", new Handler<JsonObject>() {
@@ -149,7 +109,7 @@ public class EventBusBridgeTestClient extends TestClientBase {
   }
 
   public void testUnregister() {
-    client.open("eventbus", new Handler<SockJSClientSocket>() {
+    connect(new Handler<SockJSClientSocket>() {
       @Override
       public void handle(final SockJSClientSocket sockjs) {
         final Handler<JsonObject> handler = new Handler<JsonObject>() {
@@ -188,7 +148,7 @@ public class EventBusBridgeTestClient extends TestClientBase {
   }
 
   public void testUnregister2() {
-    client.open("eventbus", new Handler<SockJSClientSocket>() {
+    connect(new Handler<SockJSClientSocket>() {
       @Override
       public void handle(final SockJSClientSocket sockjs) {
         final Handler<JsonObject> handler1 = new Handler<JsonObject>() {
@@ -240,7 +200,7 @@ public class EventBusBridgeTestClient extends TestClientBase {
       }
     });
 
-    client.open("eventbus", new Handler<SockJSClientSocket>() {
+    connect(new Handler<SockJSClientSocket>() {
       @Override
       public void handle(SockJSClientSocket sockjs) {
         JsonObject msg = new JsonObject();
@@ -266,7 +226,7 @@ public class EventBusBridgeTestClient extends TestClientBase {
       }
     });
 
-    client.open("eventbus", new Handler<SockJSClientSocket>() {
+    connect(new Handler<SockJSClientSocket>() {
       @Override
       public void handle(SockJSClientSocket sockjs) {
         // register sockjs handler
