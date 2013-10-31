@@ -1,8 +1,8 @@
 package org.vertx.java.core.sockjs;
 
 import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.streams.ExceptionSupport;
 
@@ -46,6 +46,78 @@ public interface SockJSClientSocket extends ExceptionSupport<SockJSClientSocket>
    * @param message the message to send
    */
   SockJSClientSocket send(String address, JsonObject message);
+
+  /**
+   * Sends a SockJS message to the vertx event bus
+   *
+   * @param address the event bus address
+   * @param message the message to send
+   */
+  SockJSClientSocket send(String address, JsonArray message);
+
+  /**
+   * Sends a SockJS message to the vertx event bus
+   *
+   * @param address the event bus address
+   * @param message the message to send
+   */
+  SockJSClientSocket send(String address, String message);
+
+  /**
+   * Sends a SockJS message to the vertx event bus
+   *
+   * @param address the event bus address
+   * @param message the message to send
+   */
+  SockJSClientSocket send(String address, Integer message);
+
+  /**
+   * Sends a SockJS message to the vertx event bus
+   *
+   * @param address the event bus address
+   * @param message the message to send
+   */
+  SockJSClientSocket send(String address, Long message);
+
+  /**
+   * Sends a SockJS message to the vertx event bus
+   *
+   * @param address the event bus address
+   * @param message the message to send
+   */
+  SockJSClientSocket send(String address, Double message);
+
+  /**
+   * Sends a SockJS message to the vertx event bus
+   *
+   * @param address the event bus address
+   * @param message the message to send
+   */
+  SockJSClientSocket send(String address, Float message);
+
+  /**
+   * Sends a SockJS message to the vertx event bus
+   *
+   * @param address the event bus address
+   * @param message the message to send
+   */
+  SockJSClientSocket send(String address, Boolean message);
+
+  /**
+   * Sends a SockJS message to the vertx event bus
+   *
+   * @param address the event bus address
+   * @param message the message to send
+   */
+  SockJSClientSocket send(String address, Short message);
+
+  /**
+   * Sends a SockJS message to the vertx event bus
+   *
+   * @param address the event bus address
+   * @param message the message to send
+   */
+  SockJSClientSocket send(String address, Character message);
 
   /**
    * Publishes a SockJS message to the vertx event bus

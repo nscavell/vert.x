@@ -33,6 +33,7 @@ public abstract class AbstractBridgeTestClient extends TestClientBase {
       sockJSClient = vertx.createSockJSClient(vertx.createHttpClient().setPort(port()));
       clientCreated(sockJSClient);
     }
+    tu.appReady();
   }
 
   protected void serverCreated(HttpServer server, SockJSServer sockJSServer) {
@@ -43,9 +44,7 @@ public abstract class AbstractBridgeTestClient extends TestClientBase {
     server.listen(port(), new Handler<AsyncResult<HttpServer>>() {
       @Override
       public void handle(AsyncResult<HttpServer> result) {
-        if (result.succeeded()) {
-          tu.appReady();
-        } else {
+        if (!result.succeeded()) {
           result.cause().printStackTrace();
           tu.azzert(false, "Failed to start server on port " + port());
         }
@@ -57,6 +56,10 @@ public abstract class AbstractBridgeTestClient extends TestClientBase {
   }
 
   protected void connect(Handler<SockJSClientSocket> handler) {
+    connect(prefix, handler);
+  }
+
+  protected void connect(String prefix, Handler<SockJSClientSocket> handler) {
     sockJSClient.open(prefix, handler);
   }
 

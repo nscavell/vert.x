@@ -5,6 +5,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.http.WebSocket;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.sockjs.SockJSClientSocket;
 
@@ -101,6 +102,69 @@ public class DefaultSockJSClientSocket implements SockJSClientSocket {
 
   @Override
   public SockJSClientSocket send(String address, JsonObject message) {
+    checkClosed();
+    sendSendOrPub("send", address, message);
+    return this;
+  }
+
+  @Override
+  public SockJSClientSocket send(String address, JsonArray message) {
+    checkClosed();
+    sendSendOrPub("send", address, message);
+    return this;
+  }
+
+  @Override
+  public SockJSClientSocket send(String address, String message) {
+    checkClosed();
+    sendSendOrPub("send", address, message);
+    return this;
+  }
+
+  @Override
+  public SockJSClientSocket send(String address, Integer message) {
+    checkClosed();
+    sendSendOrPub("send", address, message);
+    return this;
+  }
+
+  @Override
+  public SockJSClientSocket send(String address, Long message) {
+    checkClosed();
+    sendSendOrPub("send", address, message);
+    return this;
+  }
+
+  @Override
+  public SockJSClientSocket send(String address, Double message) {
+    checkClosed();
+    sendSendOrPub("send", address, message);
+    return this;
+  }
+
+  @Override
+  public SockJSClientSocket send(String address, Float message) {
+    checkClosed();
+    sendSendOrPub("send", address, message);
+    return this;
+  }
+
+  @Override
+  public SockJSClientSocket send(String address, Boolean message) {
+    checkClosed();
+    sendSendOrPub("send", address, message);
+    return this;
+  }
+
+  @Override
+  public SockJSClientSocket send(String address, Short message) {
+    checkClosed();
+    sendSendOrPub("send", address, message);
+    return this;
+  }
+
+  @Override
+  public SockJSClientSocket send(String address, Character message) {
     checkClosed();
     sendSendOrPub("send", address, message);
     return this;
