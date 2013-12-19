@@ -107,7 +107,7 @@ public class DefaultVertx implements VertxInternal {
         throw new IllegalStateException("Failed to instantiate " + clusterManagerFactoryClassName, e);
       }
     } else {
-      ServiceLoader<ClusterManagerFactory> factories = ServiceLoader.load(ClusterManagerFactory.class);
+      ServiceLoader<ClusterManagerFactory> factories = ServiceLoader.load(ClusterManagerFactory.class, DefaultVertx.class.getClassLoader());
       if (!factories.iterator().hasNext()) {
         throw new IllegalStateException("No ClusterManagerFactory instances found on classpath");
       }
