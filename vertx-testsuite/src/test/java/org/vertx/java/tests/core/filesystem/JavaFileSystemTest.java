@@ -311,6 +311,10 @@ public class JavaFileSystemTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void testWriteFileExistsAsync() throws Exception {
+    startTest(getMethodName());
+  }
+
   public void testAsyncFileSize() throws Exception {
     startTest(getMethodName());
   }

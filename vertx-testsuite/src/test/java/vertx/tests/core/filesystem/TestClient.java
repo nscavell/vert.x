@@ -1059,6 +1059,26 @@ public class TestClient extends TestClientBase {
     });
   }
 
+  public void testWriteFileExistsAsync() throws Exception {
+    final byte[] content = TestUtils.generateRandomByteArray(1024);
+    final String fileName = "some-file.dat";
+
+    final String path = TEST_DIR + pathSep + fileName;
+    Files.write(Paths.get(path), content);
+
+    vertx.fileSystem().open(path, null, false, true, true, true, new AsyncResultHandler<AsyncFile>() {
+      public void handle(AsyncResult<AsyncFile> ar) {
+        tu.checkThread();
+        if (ar.failed()) {
+          tu.azzert(ar.cause() instanceof FileSystemException);
+          tu.testComplete();
+        } else {
+          tu.azzert(false, "Exception should be thrown when createNew is specified and the file exists.");
+        }
+      }
+    });
+  }
+
   public void testAsyncFileSize() throws Exception {
     final String fileName = "some-file.dat";
     final byte[] part1 =  TestUtils.generateRandomByteArray(1000);
