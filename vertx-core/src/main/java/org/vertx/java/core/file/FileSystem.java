@@ -302,6 +302,28 @@ public interface FileSystem {
   FileSystem writeFileSync(String path, Buffer data) ;
 
   /**
+   * Writes the specified {@code Buffer data} to the file represented by the path {@code path},
+   * asynchronously.
+   * <p>
+   *   If the file does not already exist and
+   *   {@code createNew} is {@code true} it will be created, otherwise the operation will fail.
+   * </p>
+   * <p>
+   *   If {@code flush} is {@code true} then the write will be automatically flushed through OS buffers
+   *   to the underlying storage.
+   * </p>
+   * <p>
+   *   If {@code append} is {@code true} then the data will be written to the end of the file
+   * </p>
+   */
+  FileSystem writeFile(String path, Buffer data, boolean createNew, boolean flush, boolean append, Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Synchronous version of {@link #writeFile(String, Buffer, boolean, boolean, boolean, Handler)}
+   */
+  FileSystem writeFileSync(String path, Buffer data, boolean createNew, boolean flush, boolean append);
+
+  /**
    * Open the file represented by {@code path}, asynchronously.<p>
    * The file is opened for both reading and writing. If the file does not already exist it will be created.
    * Write operations will not automatically flush to storage.

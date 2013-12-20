@@ -299,6 +299,22 @@ public class JavaFileSystemTest extends TestBase {
     startTest(getMethodName());
   }
 
+  public void testWriteFileAppend() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testWriteFileAppendAsync() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testWriteFileExists() throws Exception {
+    startTest(getMethodName());
+  }
+
+  public void testAsyncFileSize() throws Exception {
+    startTest(getMethodName());
+  }
+
   public void testReadAsync() throws Exception {
     startTest(getMethodName());
   }

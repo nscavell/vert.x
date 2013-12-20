@@ -940,6 +940,176 @@ public class TestClient extends TestClientBase {
     });
   }
 
+  public void testWriteFileAppend() throws Exception {
+    final byte[] content = TestUtils.generateRandomByteArray(1000);
+    final byte[] appendContent = TestUtils.generateRandomByteArray(1000);
+    final Buffer buff = new Buffer(content).appendBytes(appendContent);
+    final String fileName = "some-file.dat";
+
+    final AsyncResultHandler<Void> handler = new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> ar) {
+        tu.checkThread();
+        if (ar.failed()) {
+          tu.exception(ar.cause(), "failed to write");
+        } else {
+          tu.azzert(fileExists(fileName));
+          tu.azzert(fileLength(fileName) == buff.length());
+          byte[] readBytes;
+          try {
+            readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName));
+          } catch (IOException e) {
+            tu.exception(e, "failed to read");
+            return;
+          }
+          tu.azzert(TestUtils.buffersEqual(buff, new Buffer(readBytes)));
+          tu.testComplete();
+        }
+      }
+    };
+
+    final String path = TEST_DIR + pathSep + fileName;
+    Files.write(Paths.get(path), content);
+
+    vertx.fileSystem().writeFile(path, new Buffer(appendContent), false, false, true, handler);
+  }
+
+  public void testWriteFileAppendAsync() throws Exception {
+    final String fileName = "some-file.dat";
+    final int chunkSize = 1000;
+    final int chunks = 10;
+
+    final byte[] content = TestUtils.generateRandomByteArray(1000);
+    final byte[] appendContent = TestUtils.generateRandomByteArray(chunkSize * chunks);
+    final Buffer buff = new Buffer(appendContent);
+
+    String path = TEST_DIR + pathSep + fileName;
+    Files.write(Paths.get(path), content);
+
+    vertx.fileSystem().open(path, null, false, true, false, true, new AsyncResultHandler<AsyncFile>() {
+      int count;
+      public void handle(final AsyncResult<AsyncFile> arr) {
+        tu.checkThread();
+        if (arr.succeeded()) {
+          final AsyncFile file = arr.result();
+          long position = file.size();
+          for (int i = 0; i < chunks; i++) {
+            Buffer chunk = buff.getBuffer(i * chunkSize, (i + 1) * chunkSize);
+            tu.azzert(chunk.length() == chunkSize);
+            file.write(chunk, position, new AsyncResultHandler<Void>() {
+              public void handle(AsyncResult<Void> ar) {
+                if (ar.succeeded()) {
+                  if (++count == chunks) {
+                    arr.result().close(new AsyncResultHandler<Void>() {
+                      @Override
+                      public void handle(AsyncResult<Void> ar) {
+                        tu.checkThread();
+                        if (ar.failed()) {
+                          tu.exception(ar.cause(), "failed to close");
+                        } else {
+                          Buffer expected = new Buffer(content).appendBytes(appendContent);
+                          tu.azzert(fileExists(fileName));
+                          long fileLength = fileLength(fileName);
+                          tu.azzert(fileLength == expected.length(), "Expected: " + expected.length() + ", Actual: " + fileLength);
+                          byte[] readBytes;
+                          try {
+                            readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName));
+                          } catch (IOException e) {
+                            tu.exception(e, "Failed to read file");
+                            return;
+                          }
+                          Buffer read = new Buffer(readBytes);
+                          tu.azzert(TestUtils.buffersEqual(expected, read));
+                          tu.testComplete();
+                        }
+                      }
+                    });
+                  }
+                } else {
+                  tu.exception(ar.cause(), "Failed to write");
+                }
+              }
+            });
+            position += chunkSize;
+          }
+        } else {
+          tu.exception(arr.cause(), "Failed to open");
+        }
+      }
+    });
+  }
+
+  public void testWriteFileExists() throws Exception {
+    final byte[] content = TestUtils.generateRandomByteArray(1024);
+    final Buffer buff = new Buffer(content);
+    final String fileName = "some-file.dat";
+
+    final String path = TEST_DIR + pathSep + fileName;
+    Files.write(Paths.get(path), content);
+
+    vertx.fileSystem().writeFile(path, buff, true, false, false, new AsyncResultHandler<Void>() {
+      public void handle(AsyncResult<Void> ar) {
+        tu.checkThread();
+        if (ar.failed()) {
+          tu.azzert(ar.cause() instanceof FileSystemException);
+          tu.testComplete();
+        } else {
+          tu.azzert(false, "Exception should be thrown when createNew is specified and the file exists.");
+        }
+      }
+    });
+  }
+
+  public void testAsyncFileSize() throws Exception {
+    final String fileName = "some-file.dat";
+    final byte[] part1 =  TestUtils.generateRandomByteArray(1000);
+    final byte[] part2 =  TestUtils.generateRandomByteArray(1000);
+
+    vertx.fileSystem().open(TEST_DIR + pathSep + fileName, null, false, true, true, true, new AsyncResultHandler<AsyncFile>() {
+      @Override
+      public void handle(AsyncResult<AsyncFile> arr) {
+        tu.checkThread();
+        if (arr.succeeded()) {
+          final AsyncFile file = arr.result();
+          file.write(new Buffer(part1), file.size(), new AsyncResultHandler<Void>() {
+            @Override
+            public void handle(AsyncResult<Void> wresult1) {
+              if (wresult1.succeeded()) {
+                tu.azzert(fileLength(fileName) == part1.length);
+                tu.azzert(file.size() == part1.length);
+                file.write(new Buffer(part2), file.size(), new AsyncResultHandler<Void>() {
+                  @Override
+                  public void handle(AsyncResult<Void> wresult2) {
+                    if (wresult2.succeeded()) {
+                      tu.azzert(fileLength(fileName) == part1.length + part2.length);
+                      tu.azzert(file.size() == part1.length + part2.length);
+                      byte[] readBytes;
+                      try {
+                        readBytes = Files.readAllBytes(Paths.get(TEST_DIR + pathSep + fileName));
+                      } catch (IOException e) {
+                        tu.exception(e, "Failed to read file");
+                        return;
+                      }
+                      Buffer read = new Buffer(readBytes);
+                      Buffer expected = new Buffer(part1).appendBytes(part2);
+                      tu.azzert(TestUtils.buffersEqual(expected, read));
+                      tu.testComplete();
+                    } else {
+                      tu.exception(wresult2.cause(), "failed to write file");
+                    }
+                  }
+                });
+              } else {
+                tu.exception(wresult1.cause(), "failed to write file");
+              }
+            }
+          });
+        } else {
+          tu.exception(arr.cause(), "failed to open file");
+        }
+      }
+    });
+  }
+
   public void testReadAsync() throws Exception {
     final String fileName = "some-file.dat";
     final int chunkSize = 1000;

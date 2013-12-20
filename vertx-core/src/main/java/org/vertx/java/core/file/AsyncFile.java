@@ -76,4 +76,10 @@ public interface AsyncFile extends ReadStream<AsyncFile>, WriteStream<AsyncFile>
    */
   AsyncFile flush(Handler<AsyncResult<Void>> handler);
 
+  /**
+   * Returns the current size of this file.
+   *
+   * @return The current size of this file, measured in bytes
+   */
+  long size();
 }

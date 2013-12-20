@@ -96,6 +96,16 @@ public class DefaultAsyncFile implements AsyncFile {
   }
 
   @Override
+  public long size() {
+    try {
+      return ch.size();
+    }
+    catch (IOException e) {
+      throw new FileSystemException(e);
+    }
+  }
+
+  @Override
   public void close() {
     closeInternal(null);
   }

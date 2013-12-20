@@ -35,6 +35,7 @@ import java.io.RandomAccessFile;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -267,12 +268,24 @@ public class DefaultFileSystem implements FileSystem {
   }
 
   public FileSystem writeFile(String path, Buffer data, Handler<AsyncResult<Void>> handler) {
-    writeFileInternal(path, data, handler).run();
+    writeFileInternal(path, data, false, false, false, handler).run();
     return this;
   }
 
   public FileSystem writeFileSync(String path, Buffer data) {
-    writeFileInternal(path, data, null).action();
+    writeFileInternal(path, data, false, false, false, null).action();
+    return this;
+  }
+
+  @Override
+  public FileSystem writeFile(String path, Buffer data, boolean createNew, boolean flush, boolean append, Handler<AsyncResult<Void>> handler) {
+    writeFileInternal(path, data, createNew, flush, append, handler).run();
+    return this;
+  }
+
+  @Override
+  public FileSystem writeFileSync(String path, Buffer data, boolean createNew, boolean flush, boolean append) {
+    writeFileInternal(path, data, createNew, flush, append, null).action();
     return this;
   }
 
@@ -713,12 +726,17 @@ public class DefaultFileSystem implements FileSystem {
     };
   }
 
-  private BlockingAction<Void> writeFileInternal(String path, final Buffer data, Handler<AsyncResult<Void>> handler) {
+  // Stick to the use of booleans (not FileOption) to be consistent with FileSystem.open
+  private BlockingAction<Void> writeFileInternal(String path, final Buffer data, final boolean createNew, final boolean flush, final boolean append, Handler<AsyncResult<Void>> handler) {
     final Path target = PathAdjuster.adjust(vertx, Paths.get(path));
     return new BlockingAction<Void>(vertx, handler) {
       public Void action() {
         try {
-          Files.write(target, data.getBytes());
+          Set<OpenOption> options = new HashSet<>(3);
+          if (createNew) options.add(StandardOpenOption.CREATE_NEW);
+          if (flush) options.add(StandardOpenOption.DSYNC);
+          if (append) options.add(StandardOpenOption.APPEND);
+          Files.write(target, data.getBytes(), options.toArray(new OpenOption[options.size()]));
           return null;
         } catch (IOException e) {
           throw new FileSystemException(e);
