@@ -17,8 +17,12 @@
 package org.vertx.java.core.spi.cluster;
 
 
+import org.vertx.java.core.AsyncSet;
+import org.vertx.java.core.ConcurrentAsyncMap;
+
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -49,12 +53,22 @@ public interface ClusterManager {
   /**
    * Return an async map for the given name
    */
-  <K, V> AsyncMap<K, V> getAsyncMap(String name);
+  <K, V> ConcurrentAsyncMap<K, V> getAsyncMap(String name);
 
   /**
    * Return a synchronous map for the given name
    */
   <K, V> Map<K, V> getSyncMap(String name);
+
+  /**
+   * Return an async set for the given name
+   */
+  <E> AsyncSet<E> getAsyncSet(String name);
+
+  /**
+   * Return a synchronous set for the given name
+   */
+  <E> Set<E> getSyncSet(String name);
 
   /**
    * Return the unique node ID for this node

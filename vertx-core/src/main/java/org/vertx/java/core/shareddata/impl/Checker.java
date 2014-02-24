@@ -19,12 +19,18 @@ package org.vertx.java.core.shareddata.impl;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.shareddata.Shareable;
 
+import java.io.Serializable;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class Checker {
 
   static void checkType(Object obj) {
+    checkType(obj, false);
+  }
+
+  static void checkType(Object obj, boolean cluster) {
     if (obj instanceof String ||
         obj instanceof Integer ||
         obj instanceof Long ||
@@ -35,8 +41,12 @@ public class Checker {
         obj instanceof Byte ||
         obj instanceof Character ||
         obj instanceof byte[] ||
-        obj instanceof Buffer ||
-        obj instanceof Shareable) {
+        obj instanceof Buffer) {
+    } else if (obj instanceof Shareable) {
+      // If we're checking data in a cluster, the object should also be Serializable
+      if (cluster && !(obj instanceof Serializable)) {
+        throw new IllegalArgumentException(obj.getClass().getName() + " needs to also be Serializable in order to share this data in a cluster");
+      }
     } else {
       throw new IllegalArgumentException("Invalid type for shareddata data structure: " + obj.getClass().getName());
     }

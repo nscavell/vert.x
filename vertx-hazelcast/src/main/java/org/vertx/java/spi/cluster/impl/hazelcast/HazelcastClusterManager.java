@@ -19,10 +19,11 @@ package org.vertx.java.spi.cluster.impl.hazelcast;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
+import org.vertx.java.core.AsyncSet;
+import org.vertx.java.core.ConcurrentAsyncMap;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 import org.vertx.java.core.spi.VertxSPI;
-import org.vertx.java.core.spi.cluster.AsyncMap;
 import org.vertx.java.core.spi.cluster.AsyncMultiMap;
 import org.vertx.java.core.spi.cluster.ClusterManager;
 import org.vertx.java.core.spi.cluster.NodeListener;
@@ -115,7 +116,7 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
   }
 
   @Override
-  public <K, V> AsyncMap<K, V> getAsyncMap(String name) {
+  public <K, V> ConcurrentAsyncMap<K, V> getAsyncMap(String name) {
     return new HazelcastAsyncMap<>(vertx, hazelcast, name);
   }
 
@@ -123,6 +124,16 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
   public <K, V> Map<K, V> getSyncMap(String name) {
     IMap<K, V> map = hazelcast.getMap(name);
     return map;
+  }
+
+  @Override
+  public <E> AsyncSet<E> getAsyncSet(String name) {
+    return new HazelcastAsyncSet<>(vertx, hazelcast, name);
+  }
+
+  @Override
+  public <E> Set<E> getSyncSet(String name) {
+    return hazelcast.getSet(name);
   }
 
   public synchronized void leave() {

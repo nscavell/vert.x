@@ -19,12 +19,16 @@ package org.vertx.java.spi.cluster.impl.hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.ConcurrentAsyncMap;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.spi.Action;
 import org.vertx.java.core.spi.VertxSPI;
-import org.vertx.java.core.spi.cluster.AsyncMap;
 
-class HazelcastAsyncMap<K, V> implements AsyncMap<K, V> {
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+
+class HazelcastAsyncMap<K, V> implements ConcurrentAsyncMap<K, V> {
 
   private final VertxSPI vertx;
   private final HazelcastInstance hazelcast;
@@ -38,44 +42,161 @@ class HazelcastAsyncMap<K, V> implements AsyncMap<K, V> {
   }
 
   @Override
-  public void get(final K k, Handler<AsyncResult<V>> asyncResultHandler) {
+  public void get(final Object key, Handler<AsyncResult<V>> resultHandler) {
     vertx.executeBlocking(new Action<V>() {
       public V perform() {
-        return getMap().get(k);
+        return getMap().get(key);
       }
-    }, asyncResultHandler);
+    }, resultHandler);
   }
 
   @Override
-  public void put(final K k, final V v, Handler<AsyncResult<Void>> completionHandler) {
+  public void put(final K k, final V v, Handler<AsyncResult<V>> resultHandler) {
+    vertx.executeBlocking(new Action<V>() {
+      public V perform() {
+        return getMap().put(k, HazelcastServerID.convertServerID(v));
+      }
+    }, resultHandler);
+  }
+
+  @Override
+  public void remove(final Object key, Handler<AsyncResult<V>> resultHandler) {
+    vertx.executeBlocking(new Action<V>() {
+      public V perform() {
+        return getMap().remove(key);
+      }
+    }, resultHandler);
+  }
+
+  @Override
+  public void clear(Handler<AsyncResult<Void>> completionHandler) {
     vertx.executeBlocking(new Action<Void>() {
       public Void perform() {
-        getMap().put(k, HazelcastServerID.convertServerID(v));
+        getMap().clear();
         return null;
       }
     }, completionHandler);
   }
 
   @Override
-  public void remove(final K k, Handler<AsyncResult<Void>> completionHandler) {
+  public void size(Handler<AsyncResult<Integer>> resultHandler) {
+    vertx.executeBlocking(new Action<Integer>() {
+      public Integer perform() {
+        return getMap().size();
+      }
+    }, resultHandler);
+  }
+
+  @Override
+  public void isEmpty(Handler<AsyncResult<Boolean>> resultHandler) {
+    vertx.executeBlocking(new Action<Boolean>() {
+      public Boolean perform() {
+        return getMap().isEmpty();
+      }
+    }, resultHandler);
+  }
+
+  @Override
+  public void containsKey(final Object key, Handler<AsyncResult<Boolean>> resultHandler) {
+    vertx.executeBlocking(new Action<Boolean>() {
+      public Boolean perform() {
+        return getMap().containsKey(key);
+      }
+    }, resultHandler);
+  }
+
+  @Override
+  public void containsValue(final Object value, Handler<AsyncResult<Boolean>> resultHandler) {
+    vertx.executeBlocking(new Action<Boolean>() {
+      public Boolean perform() {
+        return getMap().containsValue(value);
+      }
+    }, resultHandler);
+  }
+
+  @Override
+  public void putAll(final Map<? extends K, ? extends V> m, Handler<AsyncResult<Void>> completionHandler) {
     vertx.executeBlocking(new Action<Void>() {
       public Void perform() {
-        getMap().remove(k);
+        getMap().putAll(m);
         return null;
       }
     }, completionHandler);
+  }
+
+  @Override
+  public void keySet(Handler<AsyncResult<Set<K>>> resultHandler) {
+    vertx.executeBlocking(new Action<Set<K>>() {
+      public Set<K> perform() {
+        return getMap().keySet();
+      }
+    }, resultHandler);
+  }
+
+  @Override
+  public void values(Handler<AsyncResult<Collection<V>>> resultHandler) {
+    vertx.executeBlocking(new Action<Collection<V>>() {
+      public Collection<V> perform() {
+        return getMap().values();
+      }
+    }, resultHandler);
+  }
+
+  @Override
+  public void entrySet(Handler<AsyncResult<Set<Map.Entry<K, V>>>> resultHandler) {
+    vertx.executeBlocking(new Action<Set<Map.Entry<K, V>>>() {
+      public Set<Map.Entry<K, V>> perform() {
+        return getMap().entrySet();
+      }
+    }, resultHandler);
+  }
+
+  @Override
+  public void putIfAbsent(final K key, final V value, Handler<AsyncResult<V>> resultHandler) {
+    vertx.executeBlocking(new Action<V>() {
+      public V perform() {
+        return getMap().putIfAbsent(key, value);
+      }
+    }, resultHandler);
+  }
+
+  @Override
+  public void remove(final Object key, final Object value, Handler<AsyncResult<Boolean>> resultHandler) {
+    vertx.executeBlocking(new Action<Boolean>() {
+      public Boolean perform() {
+        return getMap().remove(key, value);
+      }
+    }, resultHandler);
+  }
+
+  @Override
+  public void replace(final K key, final V oldValue, final V newValue, Handler<AsyncResult<Boolean>> resultHandler) {
+    vertx.executeBlocking(new Action<Boolean>() {
+      public Boolean perform() {
+        return getMap().replace(key, oldValue, newValue);
+      }
+    }, resultHandler);
+  }
+
+  @Override
+  public void replace(final K key, final V value, Handler<AsyncResult<V>> resultHandler) {
+    vertx.executeBlocking(new Action<V>() {
+      public V perform() {
+        return getMap().replace(key, value);
+      }
+    }, resultHandler);
   }
 
   private IMap<K, V> getMap() {
-    IMap<K, V> result = hazelcastMap;
-    if (result == null) {
-      synchronized (this) {
-        result = hazelcastMap;
-        if (result == null) {
-          result = hazelcastMap = hazelcast.getMap(name);
+      IMap<K, V> result = hazelcastMap;
+      if (result == null) {
+        synchronized (this) {
+          result = hazelcastMap;
+          if (result == null) {
+            result = hazelcastMap = hazelcast.getMap(name);
+          }
         }
       }
+      return result;
     }
-    return result;
-  }
 }

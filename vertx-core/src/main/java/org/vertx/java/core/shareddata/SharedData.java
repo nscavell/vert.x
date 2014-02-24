@@ -16,10 +16,15 @@
 
 package org.vertx.java.core.shareddata;
 
+import org.vertx.java.core.AsyncSet;
+import org.vertx.java.core.ConcurrentAsyncMap;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.core.shareddata.impl.SharedAsyncMap;
+import org.vertx.java.core.shareddata.impl.SharedAsyncSet;
 import org.vertx.java.core.shareddata.impl.SharedMap;
 import org.vertx.java.core.shareddata.impl.SharedSet;
+import org.vertx.java.core.spi.cluster.ClusterManager;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -59,6 +64,19 @@ public class SharedData {
   private ConcurrentMap<Object, SharedMap<?, ?>> maps = new ConcurrentHashMap<>();
   private ConcurrentMap<Object, SharedSet<?>> sets = new ConcurrentHashMap<>();
 
+  private ConcurrentMap<String, ConcurrentAsyncMap<?, ?>> asyncMaps = new ConcurrentHashMap<>();
+  private ConcurrentMap<String, AsyncSet<?>> asyncSets = new ConcurrentHashMap<>();
+
+  private final ClusterManager clusterManager;
+
+  public SharedData() {
+    this(null);
+  }
+
+  public SharedData(ClusterManager clusterManager) {
+    this.clusterManager = clusterManager;
+  }
+
   /**
    * Return a {@code Map} with the specific {@code name}. All invocations of this method with the same value of {@code name}
    * are guaranteed to return the same {@code Map} instance. <p>
@@ -73,6 +91,26 @@ public class SharedData {
       }
     }
     return map;
+  }
+
+  //TODO: javadoc
+  public <K, V> ConcurrentAsyncMap<K, V> getAsyncMap(String name) {
+    ConcurrentAsyncMap<?, ?> map = asyncMaps.get(name);
+    if (map == null) {
+      if (clusterManager != null) {
+        map = clusterManager.getAsyncMap(name);
+      } else {
+        map = new SharedAsyncMap<>(new SharedMap<>());
+      }
+      ConcurrentAsyncMap<?, ?> prev = asyncMaps.putIfAbsent(name, map);
+      if (prev != null) {
+        map = prev;
+      }
+    }
+
+    @SuppressWarnings("unchecked")
+    ConcurrentAsyncMap<K, V> ret = (ConcurrentAsyncMap<K, V>) map;
+    return ret;
   }
 
   /**
@@ -91,6 +129,32 @@ public class SharedData {
     return set;
   }
 
+  public <E> AsyncSet<E> getAsyncSet(String name) {
+    AsyncSet<?> set = asyncSets.get(name);
+    if (set == null) {
+      if (clusterManager != null) {
+        set = clusterManager.getAsyncSet(name);
+      } else {
+        set = new SharedAsyncSet<>(new SharedSet<>());
+      }
+      AsyncSet<?> prev = asyncSets.putIfAbsent(name, set);
+      if (prev != null) {
+        set = prev;
+      }
+    }
+
+    @SuppressWarnings("unchecked")
+    AsyncSet<E> ret = (AsyncSet<E>) set;
+    return ret;
+  }
+
+  /**
+   * Remove the {@code Map} with the specific {@code name}.
+   */
+  public boolean removeAsyncMap(String name) {
+    return asyncMaps.remove(name) != null;
+  }
+
   /**
    * Remove the {@code Map} with the specific {@code name}.
    */
@@ -99,10 +163,16 @@ public class SharedData {
   }
 
   /**
+   * Remove the {@code AsyncSet} with the specific {@code name}.
+   */
+  public boolean removeAsyncSet(String name) {
+    return asyncSets.remove(name) != null;
+  }
+
+  /**
    * Remove the {@code Set} with the specific {@code name}.
    */
   public boolean removeSet(Object name) {
     return sets.remove(name) != null;
   }
-
 }

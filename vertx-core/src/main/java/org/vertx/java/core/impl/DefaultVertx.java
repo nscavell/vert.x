@@ -73,7 +73,7 @@ public class DefaultVertx implements VertxInternal {
 
   private final FileSystem fileSystem = getFileSystem();
   private final EventBus eventBus;
-  private final SharedData sharedData = new SharedData();
+  private final SharedData sharedData;
 
   private ExecutorService backgroundPool = VertxExecutorFactory.workerPool("vert.x-worker-thread-");
   private final OrderedExecutorFactory orderedFact = new OrderedExecutorFactory(backgroundPool);
@@ -89,6 +89,7 @@ public class DefaultVertx implements VertxInternal {
   public DefaultVertx() {
     this.eventBus = new DefaultEventBus(this);
     this.clusterManager = null;
+    this.sharedData = new SharedData();
   }
 
   public DefaultVertx(String hostname) {
@@ -115,6 +116,7 @@ public class DefaultVertx implements VertxInternal {
     }
     this.clusterManager = factory.createClusterManager(this);
     this.clusterManager.join();
+    this.sharedData = new SharedData(clusterManager);
     final Vertx inst = this;
     this.eventBus = new DefaultEventBus(this, port, hostname, clusterManager, new AsyncResultHandler<Void>() {
       @Override
