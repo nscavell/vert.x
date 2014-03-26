@@ -16,6 +16,7 @@
 
 package org.vertx.java.spi.cluster.impl.hazelcast;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -26,18 +27,21 @@ import org.vertx.java.core.spi.cluster.AsyncMap;
 class HazelcastAsyncMap<K, V> implements AsyncMap<K, V> {
 
   private final VertxSPI vertx;
-  private final IMap<K, V> map;
+  private final HazelcastInstance hazelcast;
+  private final String name;
+  private volatile IMap<K, V> hazelcastMap;
 
-  public HazelcastAsyncMap(VertxSPI vertx, IMap<K, V> map) {
+  public HazelcastAsyncMap(VertxSPI vertx, HazelcastInstance hazelcast, String name) {
     this.vertx = vertx;
-    this.map = map;
+    this.hazelcast = hazelcast;
+    this.name = name;
   }
 
   @Override
   public void get(final K k, Handler<AsyncResult<V>> asyncResultHandler) {
     vertx.executeBlocking(new Action<V>() {
       public V perform() {
-        return map.get(k);
+        return getMap().get(k);
       }
     }, asyncResultHandler);
   }
@@ -46,7 +50,7 @@ class HazelcastAsyncMap<K, V> implements AsyncMap<K, V> {
   public void put(final K k, final V v, Handler<AsyncResult<Void>> completionHandler) {
     vertx.executeBlocking(new Action<Void>() {
       public Void perform() {
-        map.put(k, HazelcastServerID.convertServerID(v));
+        getMap().put(k, HazelcastServerID.convertServerID(v));
         return null;
       }
     }, completionHandler);
@@ -56,9 +60,22 @@ class HazelcastAsyncMap<K, V> implements AsyncMap<K, V> {
   public void remove(final K k, Handler<AsyncResult<Void>> completionHandler) {
     vertx.executeBlocking(new Action<Void>() {
       public Void perform() {
-        map.remove(k);
+        getMap().remove(k);
         return null;
       }
     }, completionHandler);
+  }
+
+  private IMap<K, V> getMap() {
+    IMap<K, V> result = hazelcastMap;
+    if (result == null) {
+      synchronized (this) {
+        result = hazelcastMap;
+        if (result == null) {
+          result = hazelcastMap = hazelcast.getMap(name);
+        }
+      }
+    }
+    return result;
   }
 }

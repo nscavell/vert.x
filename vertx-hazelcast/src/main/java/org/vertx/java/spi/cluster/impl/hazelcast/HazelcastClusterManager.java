@@ -91,8 +91,7 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
 	 * @return subscription map
 	 */
   public <K, V> AsyncMultiMap<K, V> getAsyncMultiMap(final String name) {
-    com.hazelcast.core.MultiMap map = hazelcast.getMultiMap(name);
-    return new HazelcastAsyncMultiMap(vertx, map);
+    return new HazelcastAsyncMultiMap<>(vertx, hazelcast, name);
   }
 
   @Override
@@ -117,8 +116,7 @@ class HazelcastClusterManager implements ClusterManager, MembershipListener {
 
   @Override
   public <K, V> AsyncMap<K, V> getAsyncMap(String name) {
-    IMap<K, V> map = hazelcast.getMap(name);
-    return new HazelcastAsyncMap(vertx, map);
+    return new HazelcastAsyncMap<>(vertx, hazelcast, name);
   }
 
   @Override

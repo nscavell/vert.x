@@ -18,6 +18,8 @@ package org.vertx.java.spi.cluster.impl.hazelcast;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MultiMap;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
@@ -42,7 +44,9 @@ class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryListener
   private static final Logger log = LoggerFactory.getLogger(HazelcastAsyncMultiMap.class);
 
   private final VertxSPI vertx;
-  private final com.hazelcast.core.MultiMap<K, V> map;
+  private final HazelcastInstance hazelcast;
+  private final String name;
+  private volatile MultiMap<K, V> hazelcastMap;
 
   /*
    The Hazelcast near cache is very slow so we use our own one.
@@ -56,16 +60,17 @@ class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryListener
     */
   private ConcurrentMap<K, ChoosableSet<V>> cache = new ConcurrentHashMap<>();
 
-  public HazelcastAsyncMultiMap(VertxSPI vertx, com.hazelcast.core.MultiMap<K, V> map) {
+  public HazelcastAsyncMultiMap(VertxSPI vertx, HazelcastInstance hazelcast, String name) {
     this.vertx = vertx;
-    this.map = map;
-    map.addEntryListener(this, true);
+    this.hazelcast = hazelcast;
+    this.name = name;
   }
 
   @Override
   public void removeAllForValue(final V val, final Handler<AsyncResult<Void>> completionHandler) {
     vertx.executeBlocking(new Action<Void>() {
       public Void perform() {
+        MultiMap<K, V> map = getMap();
         for (Map.Entry<K, V> entry : map.entrySet()) {
           V v = entry.getValue();
           if (val.equals(v)) {
@@ -81,7 +86,7 @@ class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryListener
   public void add(final K k, final V v, final Handler<AsyncResult<Void>> completionHandler) {
     vertx.executeBlocking(new Action<Void>() {
       public Void perform() {
-        map.put(k, HazelcastServerID.convertServerID(v));
+        getMap().put(k, HazelcastServerID.convertServerID(v));
         return null;
       }
     }, completionHandler);
@@ -96,7 +101,7 @@ class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryListener
     } else {
       vertx.executeBlocking(new Action<Collection<V>>() {
           public Collection<V> perform() {
-            return map.get(k);
+            return getMap().get(k);
           }
         }, new AsyncResultHandler<Collection<V>>() {
           public void handle(AsyncResult<Collection<V>> result) {
@@ -135,7 +140,7 @@ class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryListener
 
     vertx.executeBlocking(new Action<Void>() {
       public Void perform() {
-        map.remove(k, v);
+        getMap().remove(k, v);
         return null;
       }
     }, completionHandler);
@@ -187,6 +192,19 @@ class HazelcastAsyncMultiMap<K, V> implements AsyncMultiMap<K, V>, EntryListener
     entryRemoved(entry);
   }
 
+  private MultiMap<K, V> getMap() {
+    MultiMap<K, V> result = hazelcastMap;
+    if (result == null) {
+      synchronized (this) {
+        result = hazelcastMap;
+        if (result == null) {
+          result = hazelcastMap = hazelcast.getMultiMap(name);
+          result.addEntryListener(HazelcastAsyncMultiMap.this, true);
+        }
+      }
+    }
+    return result;
+  }
 
 
 }
