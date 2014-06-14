@@ -24,12 +24,12 @@ import org.vertx.java.core.eventbus.Message;
  */
 class FloatMessage extends BaseMessage<Float> {
 
-  FloatMessage(boolean send, String address, Float body) {
-    super(send, address, body);
+  public FloatMessage(boolean send, String address, Float message, MessageFactory factory) {
+    super(send, address, message, factory);
   }
 
-  public FloatMessage(Buffer readBuff) {
-    super(readBuff);
+  public FloatMessage(Buffer readBuff, MessageFactory factory) {
+    super(readBuff, factory);
   }
 
   @Override

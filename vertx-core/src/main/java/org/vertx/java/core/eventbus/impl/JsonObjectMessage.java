@@ -28,19 +28,19 @@ public class JsonObjectMessage extends BaseMessage<JsonObject> {
 
   private byte[] encoded;
 
-  public JsonObjectMessage(boolean send, String address, JsonObject body) {
-    super(send, address, body);
+  public JsonObjectMessage(boolean send, String address, JsonObject message, MessageFactory factory) {
+    super(send, address, message, factory);
   }
 
   private JsonObjectMessage(JsonObjectMessage other) {
-    super(other.send, other.address, other.body == null ? null : other.body.copy());
+    super(other.send, other.address, other.body == null ? null : other.body.copy(), other.messageFactory);
     this.replyAddress = other.replyAddress;
     this.bus = other.bus;
     this.sender = other.sender;
   }
 
-  public JsonObjectMessage(Buffer readBuff) {
-    super(readBuff);
+  public JsonObjectMessage(Buffer readBuff, MessageFactory factory) {
+    super(readBuff, factory);
   }
 
   @Override

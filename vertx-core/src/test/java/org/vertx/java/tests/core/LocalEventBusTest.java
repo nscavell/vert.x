@@ -440,7 +440,81 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   // Sends with different types
 
+  @Test
+  public void testSendCustomObject() {
+    SomePojo pojo = new SomePojo("foo", 100);
 
+    eb.registerCodec(SomePojo.class, new SomePojoCodec());
+    eb.registerHandler("custom", msg -> {
+      assertTrue(pojo != msg.body());
+      assertEquals(pojo, msg.body());
+      testComplete();
+    });
+    eb.send("custom", pojo);
+
+    await();
+  }
+
+  @Test
+  public void testSendReplyCustomObject() {
+    SomePojo pojo = new SomePojo("foo", 100);
+    eb.registerCodec(SomePojo.class, new SomePojoCodec());
+    eb.registerHandler("custom", msg -> {
+      msg.reply(pojo);
+    });
+    eb.send("custom", "foo", (Handler<Message<SomePojo>>) reply -> {
+      assertTrue(pojo != reply.body());
+      assertEquals(pojo, reply.body());
+      testComplete();
+    });
+
+    await();
+  }
+
+  @Test
+  public void testPublishCustomObject() {
+    eb.registerCodec(SomePojo.class, new SomePojoCodec());
+    SomePojo pojo = new SomePojo("foo", 100);
+
+    AtomicInteger count = new AtomicInteger(0);
+
+    Handler<Message<SomePojo>> h1 = msg -> {
+      assertTrue(pojo != msg.body());
+      assertEquals(pojo, msg.body());
+      if (count.incrementAndGet() == 2) {
+        testComplete();
+      }
+    };
+
+    Handler<Message<SomePojo>> h2 = msg -> {
+      assertTrue(pojo != msg.body());
+      assertEquals(pojo, msg.body());
+      if (count.incrementAndGet() == 2) {
+        testComplete();
+      }
+    };
+    eb.registerHandler("custom", h1);
+    eb.registerHandler("custom", h2);
+
+    eb.publish("custom", pojo);
+
+    await();
+  }
+
+  @Test
+  public void testShareableCustomObject() {
+    SomePojo pojo = new SomeShareablePojo("foo", 100);
+
+    eb.registerCodec(SomeShareablePojo.class, new SomeShareablePojoCodec());
+    eb.registerHandler("custom", (Handler<Message<SomePojo>>) msg -> {
+      assertTrue(pojo == msg.body());
+      assertEquals(pojo, msg.body());
+      testComplete();
+    });
+    eb.send("custom", pojo);
+
+    await();
+  }
 
   @Test
   public void testPublish() {
@@ -630,8 +704,5 @@ public class LocalEventBusTest extends EventBusTestBase {
     eb.publish(ADDRESS1, (T)val);
     await();
   }
-
-
-
 }
 

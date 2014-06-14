@@ -201,6 +201,67 @@ public class ClusteredEventBusTest extends EventBusTestBase {
   }
 
   @Test
+  public void testSendCustomObject() {
+    startNodes(2);
+    SomePojo pojo = new SomePojo("foo", 100);
+    vertices[0].eventBus().registerCodec(SomePojo.class, new SomePojoCodec());
+    vertices[0].eventBus().registerHandler("custom", (Handler<Message<SomePojo>>) msg -> {
+      assertTrue(pojo != msg.body());
+      assertEquals(pojo, msg.body());
+      testComplete();
+    });
+    vertices[1].eventBus().registerCodec(SomePojo.class, new SomePojoCodec());
+    vertices[1].eventBus().send("custom", pojo);
+
+    await();
+  }
+
+  @Test
+  public void testPublishCustomObject() {
+    startNodes(3);
+    SomePojo pojo = new SomePojo("foo", 100);
+    AtomicInteger count = new AtomicInteger();
+
+    vertices[0].eventBus().registerCodec(SomePojo.class, new SomePojoCodec());
+    vertices[0].eventBus().registerHandler("custom", msg -> {
+      assertTrue(pojo != msg.body());
+      assertEquals(pojo, msg.body());
+      if (count.incrementAndGet() == 2) {
+        testComplete();
+      }
+    });
+    vertices[1].eventBus().registerCodec(SomePojo.class, new SomePojoCodec());
+    vertices[1].eventBus().registerHandler("custom", msg -> {
+      assertTrue(pojo != msg.body());
+      assertEquals(pojo, msg.body());
+      if (count.incrementAndGet() == 2) {
+        testComplete();
+      }
+    });
+
+    vertices[2].eventBus().registerCodec(SomePojo.class, new SomePojoCodec());
+    vertices[2].eventBus().publish("custom", pojo);
+
+    await();
+  }
+
+  @Test
+  public void testShareableCustomObject() {
+    startNodes(2);
+    SomePojo pojo = new SomeShareablePojo("foo", 100);
+    vertices[0].eventBus().registerCodec(SomeShareablePojo.class, new SomeShareablePojoCodec());
+    vertices[0].eventBus().registerHandler("custom", (Handler<Message<SomePojo>>) msg -> {
+      assertTrue(pojo != msg.body());
+      assertEquals(pojo, msg.body());
+      testComplete();
+    });
+    vertices[1].eventBus().registerCodec(SomeShareablePojo.class, new SomeShareablePojoCodec());
+    vertices[1].eventBus().send("custom", pojo);
+
+    await();
+  }
+
+  @Test
   public void testLocalHandlerNotReceive() throws Exception {
     startNodes(2);
     vertices[1].eventBus().registerLocalHandler(ADDRESS1, msg -> {

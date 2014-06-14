@@ -24,12 +24,12 @@ import org.vertx.java.core.eventbus.Message;
  */
 class ByteArrayMessage extends BaseMessage<byte[]> {
 
-  ByteArrayMessage(boolean send, String address, byte[] body) {
-    super(send, address, body);
+  public ByteArrayMessage(boolean send, String address, byte[] message, MessageFactory factory) {
+    super(send, address, message, factory);
   }
 
-  public ByteArrayMessage(Buffer readBuff) {
-    super(readBuff);
+  public ByteArrayMessage(Buffer readBuff, MessageFactory factory) {
+    super(readBuff, factory);
   }
 
   @Override
@@ -68,7 +68,7 @@ class ByteArrayMessage extends BaseMessage<byte[]> {
     } else {
       bod = null;
     }
-    ByteArrayMessage copied = new ByteArrayMessage(send, address, bod);
+    ByteArrayMessage copied = new ByteArrayMessage(send, address, bod, messageFactory);
     copied.replyAddress = this.replyAddress;
     copied.bus = this.bus;
     copied.sender = this.sender;

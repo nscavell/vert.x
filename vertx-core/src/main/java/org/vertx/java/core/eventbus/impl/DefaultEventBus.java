@@ -20,8 +20,9 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.eventbus.EventBus;
-import org.vertx.java.core.eventbus.Registration;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.eventbus.MessageCodec;
+import org.vertx.java.core.eventbus.Registration;
 import org.vertx.java.core.eventbus.ReplyException;
 import org.vertx.java.core.eventbus.ReplyFailure;
 import org.vertx.java.core.impl.Closeable;
@@ -73,6 +74,7 @@ public class DefaultEventBus implements EventBus {
   private final ConcurrentMap<String, Handlers> handlerMap = new ConcurrentHashMap<>();
   private final ClusterManager clusterMgr;
   private final AtomicLong replySequence = new AtomicLong(0);
+  private final MessageFactory messageFactory = new MessageFactory();
 
   public DefaultEventBus(VertxInternal vertx) {
     // Just some dummy server ID
@@ -102,337 +104,337 @@ public class DefaultEventBus implements EventBus {
     // In order to fool the type system we need to wrap the handler - at run time the Message<String> handler
     // will happily handle non String types as types are erased at run-time
     Handler<Message<String>> wrapped = replyHandler == null ? null : replyHandler::handle;
-    sendOrPub(createMessage(true, address, message), wrapped);
+    sendOrPub(messageFactory.createMessage(true, address, message), wrapped);
     return this;
   }
 
   @Override
   public <T> EventBus sendWithTimeout(String address, Object message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
+    sendOrPubWithTimeout(messageFactory.createMessage(true, address, message), replyHandler, timeout);
     return this;
   }
 
   @Override
   public EventBus send(String address, Object message) {
-    sendOrPub(createMessage(true, address, message), null);
+    sendOrPub(messageFactory.createMessage(true, address, message), null);
     return this;
   }
 
   @Override
   public <T> EventBus send(String address, JsonObject message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new JsonObjectMessage(true, address, message), replyHandler);
+    sendOrPub(new JsonObjectMessage(true, address, message, messageFactory), replyHandler);
     return this;
   }
 
   @Override
   public <T> EventBus sendWithTimeout(String address, JsonObject message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
+    sendOrPubWithTimeout(new JsonObjectMessage(true, address, message, messageFactory), replyHandler, timeout);
     return this;
   }
 
   @Override
   public EventBus send(String address, JsonObject message) {
-    sendOrPub(new JsonObjectMessage(true, address, message), null);
+    sendOrPub(new JsonObjectMessage(true, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public <T> EventBus send(String address, JsonArray message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new JsonArrayMessage(true, address, message), replyHandler);
+    sendOrPub(new JsonArrayMessage(true, address, message, messageFactory), replyHandler);
     return this;
   }
 
   @Override
   public <T> EventBus sendWithTimeout(String address, JsonArray message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
+    sendOrPubWithTimeout(new JsonArrayMessage(true, address, message, messageFactory), replyHandler, timeout);
     return this;
   }
 
   @Override
   public EventBus send(String address, JsonArray message) {
-    sendOrPub(new JsonArrayMessage(true, address, message), null);
+    sendOrPub(new JsonArrayMessage(true, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public <T> EventBus send(String address, Buffer message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new BufferMessage(true, address, message), replyHandler);
+    sendOrPub(new BufferMessage(true, address, message, messageFactory), replyHandler);
     return this;
   }
 
   @Override
   public <T> EventBus sendWithTimeout(String address, Buffer message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
+    sendOrPubWithTimeout(new BufferMessage(true, address, message, messageFactory), replyHandler, timeout);
     return this;
   }
 
   @Override
   public EventBus send(String address, Buffer message) {
-    sendOrPub(new BufferMessage(true, address, message), null);
+    sendOrPub(new BufferMessage(true, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public <T> EventBus send(String address, byte[] message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new ByteArrayMessage(true, address, message), replyHandler);
+    sendOrPub(new ByteArrayMessage(true, address, message, messageFactory), replyHandler);
     return this;
   }
 
   @Override
   public <T> EventBus sendWithTimeout(String address, byte[] message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
+    sendOrPubWithTimeout(new ByteArrayMessage(true, address, message, messageFactory), replyHandler, timeout);
     return this;
   }
 
   @Override
   public EventBus send(String address, byte[] message) {
-    sendOrPub(new ByteArrayMessage(true, address, message), null);
+    sendOrPub(new ByteArrayMessage(true, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public <T> EventBus send(String address, String message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new StringMessage(true, address, message), replyHandler);
+    sendOrPub(new StringMessage(true, address, message, messageFactory), replyHandler);
     return this;
   }
 
   @Override
   public <T> EventBus sendWithTimeout(String address, String message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
+    sendOrPubWithTimeout(new StringMessage(true, address, message, messageFactory), replyHandler, timeout);
     return this;
   }
 
   @Override
   public EventBus send(String address, String message) {
-    sendOrPub(new StringMessage(true, address, message), null);
+    sendOrPub(new StringMessage(true, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public <T> EventBus send(String address, Integer message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new IntMessage(true, address, message), replyHandler);
+    sendOrPub(new IntMessage(true, address, message, messageFactory), replyHandler);
     return this;
   }
 
   @Override
   public <T> EventBus sendWithTimeout(String address, Integer message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
+    sendOrPubWithTimeout(new IntMessage(true, address, message, messageFactory), replyHandler, timeout);
     return this;
   }
 
   @Override
   public EventBus send(String address, Integer message) {
-    sendOrPub(new IntMessage(true, address, message), null);
+    sendOrPub(new IntMessage(true, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public <T> EventBus send(String address, Long message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new LongMessage(true, address, message), replyHandler);
+    sendOrPub(new LongMessage(true, address, message, messageFactory), replyHandler);
     return this;
   }
 
   @Override
   public <T> EventBus sendWithTimeout(String address, Long message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
+    sendOrPubWithTimeout(new LongMessage(true, address, message, messageFactory), replyHandler, timeout);
     return this;
   }
 
   @Override
   public EventBus send(String address, Long message) {
-    sendOrPub(new LongMessage(true, address, message), null);
+    sendOrPub(new LongMessage(true, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public <T> EventBus send(String address, Float message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new FloatMessage(true, address, message), replyHandler);
+    sendOrPub(new FloatMessage(true, address, message, messageFactory), replyHandler);
     return this;
   }
 
   @Override
   public <T> EventBus sendWithTimeout(String address, Float message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
+    sendOrPubWithTimeout(new FloatMessage(true, address, message, messageFactory), replyHandler, timeout);
     return this;
   }
 
   @Override
   public EventBus send(String address, Float message) {
-    sendOrPub(new FloatMessage(true, address, message), null);
+    sendOrPub(new FloatMessage(true, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public <T> EventBus send(String address, Double message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new DoubleMessage(true, address, message), replyHandler);
+    sendOrPub(new DoubleMessage(true, address, message, messageFactory), replyHandler);
     return this;
   }
 
   @Override
   public <T> EventBus sendWithTimeout(String address, Double message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
+    sendOrPubWithTimeout(new DoubleMessage(true, address, message, messageFactory), replyHandler, timeout);
     return this;
   }
 
   @Override
   public EventBus send(String address, Double message) {
-    sendOrPub(new DoubleMessage(true, address, message), null);
+    sendOrPub(new DoubleMessage(true, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public <T> EventBus send(String address, Boolean message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new BooleanMessage(true, address, message), replyHandler);
+    sendOrPub(new BooleanMessage(true, address, message, messageFactory), replyHandler);
     return this;
   }
 
   @Override
   public <T> EventBus sendWithTimeout(String address, Boolean message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
+    sendOrPubWithTimeout(new BooleanMessage(true, address, message, messageFactory), replyHandler, timeout);
     return this;
   }
 
   @Override
   public EventBus send(String address, Boolean message) {
-    sendOrPub(new BooleanMessage(true, address, message), null);
+    sendOrPub(new BooleanMessage(true, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public <T> EventBus send(String address, Short message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new ShortMessage(true, address, message), replyHandler);
+    sendOrPub(new ShortMessage(true, address, message, messageFactory), replyHandler);
     return this;
   }
 
   @Override
   public <T> EventBus sendWithTimeout(String address, Short message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
+    sendOrPubWithTimeout(new ShortMessage(true, address, message, messageFactory), replyHandler, timeout);
     return this;
   }
 
   @Override
   public EventBus send(String address, Short message) {
-    sendOrPub(new ShortMessage(true, address, message), null);
+    sendOrPub(new ShortMessage(true, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public <T> EventBus send(String address, Character message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new CharacterMessage(true, address, message), replyHandler);
+    sendOrPub(new CharacterMessage(true, address, message, messageFactory), replyHandler);
     return this;
   }
 
   @Override
   public <T> EventBus sendWithTimeout(String address, Character message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
+    sendOrPubWithTimeout(new CharacterMessage(true, address, message, messageFactory), replyHandler, timeout);
     return this;
   }
 
   @Override
   public EventBus send(String address, Character message) {
-    sendOrPub(new CharacterMessage(true, address, message), null);
+    sendOrPub(new CharacterMessage(true, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public <T> EventBus send(String address, Byte message, Handler<Message<T>> replyHandler) {
-    sendOrPub(new ByteMessage(true, address, message), replyHandler);
+    sendOrPub(new ByteMessage(true, address, message, messageFactory), replyHandler);
     return this;
   }
 
   @Override
   public <T> EventBus sendWithTimeout(String address, Byte message, long timeout, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubWithTimeout(createMessage(true, address, message), replyHandler, timeout);
+    sendOrPubWithTimeout(new ByteMessage(true, address, message, messageFactory), replyHandler, timeout);
     return this;
   }
 
   @Override
   public EventBus send(String address, Byte message) {
-    sendOrPub(new ByteMessage(true, address, message), null);
+    sendOrPub(new ByteMessage(true, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public EventBus publish(String address, Object message) {
-    sendOrPub(createMessage(false, address, message), null);
+    sendOrPub(messageFactory.createMessage(false, address, message), null);
     return this;
   }
 
   @Override
   public EventBus publish(String address, JsonObject message) {
-    sendOrPub(new JsonObjectMessage(false, address, message), null);
+    sendOrPub(new JsonObjectMessage(false, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public EventBus publish(String address, JsonArray message) {
-    sendOrPub(new JsonArrayMessage(false, address, message), null);
+    sendOrPub(new JsonArrayMessage(false, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public EventBus publish(String address, Buffer message) {
-    sendOrPub(new BufferMessage(false, address, message), null);
+    sendOrPub(new BufferMessage(false, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public EventBus publish(String address, byte[] message) {
-    sendOrPub(new ByteArrayMessage(false, address, message), null);
+    sendOrPub(new ByteArrayMessage(false, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public EventBus publish(String address, String message) {
-    sendOrPub(new StringMessage(false, address, message), null);
+    sendOrPub(new StringMessage(false, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public EventBus publish(String address, Integer message) {
-    sendOrPub(new IntMessage(false, address, message), null);
+    sendOrPub(new IntMessage(false, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public EventBus publish(String address, Long message) {
-    sendOrPub(new LongMessage(false, address, message), null);
+    sendOrPub(new LongMessage(false, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public EventBus publish(String address, Float message) {
-    sendOrPub(new FloatMessage(false, address, message), null);
+    sendOrPub(new FloatMessage(false, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public EventBus publish(String address, Double message) {
-    sendOrPub(new DoubleMessage(false, address, message), null);
+    sendOrPub(new DoubleMessage(false, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public EventBus publish(String address, Boolean message) {
-    sendOrPub(new BooleanMessage(false, address, message), null);
+    sendOrPub(new BooleanMessage(false, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public EventBus publish(String address, Short message) {
-    sendOrPub(new ShortMessage(false, address, message), null);
+    sendOrPub(new ShortMessage(false, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public EventBus publish(String address, Character message) {
-    sendOrPub(new CharacterMessage(false, address, message), null);
+    sendOrPub(new CharacterMessage(false, address, message, messageFactory), null);
     return this;
   }
 
   @Override
   public EventBus publish(String address, Byte message) {
-    sendOrPub(new ByteMessage(false, address, message), null);
+    sendOrPub(new ByteMessage(false, address, message, messageFactory), null);
     return this;
   }
 
@@ -492,6 +494,15 @@ public class DefaultEventBus implements EventBus {
   }
 
   @Override
+  public <T> EventBus registerCodec(Class<T> type, MessageCodec<T> codec) {
+    Objects.requireNonNull(type);
+    Objects.requireNonNull(codec);
+
+    messageFactory.registerCodec(type, codec);
+    return this;
+  }
+
+  @Override
   public void close(Handler<AsyncResult<Void>> doneHandler) {
 		if (clusterMgr != null) {
 			clusterMgr.leave();
@@ -527,42 +538,6 @@ public class DefaultEventBus implements EventBus {
     }
   }
 
-  static <U> BaseMessage<U> createMessage(boolean send, String address, U message) {
-    BaseMessage bm;
-    if (message instanceof String) {
-      bm = new StringMessage(send, address, (String)message);
-    } else if (message instanceof Buffer) {
-      bm = new BufferMessage(send, address, (Buffer)message);
-    } else if (message instanceof JsonObject) {
-      bm = new JsonObjectMessage(send, address, (JsonObject)message);
-    } else if (message instanceof JsonArray) {
-      bm = new JsonArrayMessage(send, address, (JsonArray)message);
-    } else if (message instanceof byte[]) {
-      bm = new ByteArrayMessage(send, address, (byte[])message);
-    } else if (message instanceof Integer) {
-      bm = new IntMessage(send, address, (Integer)message);
-    } else if (message instanceof Long) {
-      bm = new LongMessage(send, address, (Long)message);
-    } else if (message instanceof Float) {
-      bm = new FloatMessage(send, address, (Float)message);
-    } else if (message instanceof Double) {
-      bm = new DoubleMessage(send, address, (Double)message);
-    } else if (message instanceof Boolean) {
-      bm = new BooleanMessage(send, address, (Boolean)message);
-    } else if (message instanceof Short) {
-      bm = new ShortMessage(send, address, (Short)message);
-    } else if (message instanceof Character) {
-      bm = new CharacterMessage(send, address, (Character)message);
-    } else if (message instanceof Byte) {
-      bm = new ByteMessage(send, address, (Byte)message);
-    } else if (message == null) {
-      bm = new StringMessage(send, address, null);
-    } else {
-      throw new IllegalArgumentException("Cannot send object of class " + message.getClass() + " on the event bus: " + message);
-    }
-    return bm;
-  }
-
   private NetServer setServer(int port, String hostName, Handler<AsyncResult<Void>> listenHandler) {
     NetServer server = vertx.createNetServer().connectHandler(socket -> {
       RecordParser parser = RecordParser.newFixed(4, null);
@@ -573,7 +548,7 @@ public class DefaultEventBus implements EventBus {
             size = buff.getInt(0);
             parser.fixedSizeMode(size);
           } else {
-            BaseMessage received = MessageFactory.read(buff);
+            BaseMessage received = messageFactory.read(buff);
             if (received.type() == MessageFactory.TYPE_PING) {
               // Send back a pong - a byte will do
               socket.write(PONG);
@@ -862,7 +837,7 @@ public class DefaultEventBus implements EventBus {
         log.warn("No pong from server " + serverID + " - will consider it dead, timerID: " + id2 + " holder " + holder);
         cleanupConnection(holder.theServerID, holder, true);
       });
-      new PingMessage(serverID).write(holder.socket);
+      new PingMessage(serverID, messageFactory).write(holder.socket);
     });
   }
 

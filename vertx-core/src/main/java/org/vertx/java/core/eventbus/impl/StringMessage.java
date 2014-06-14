@@ -27,12 +27,12 @@ class StringMessage extends BaseMessage<String> {
 
   private byte[] encoded;
 
-  StringMessage(boolean send, String address, String body) {
-    super(send, address, body);
+  public StringMessage(boolean send, String address, String message, MessageFactory factory) {
+    super(send, address, message, factory);
   }
 
-  public StringMessage(Buffer readBuff) {
-    super(readBuff);
+  public StringMessage(Buffer readBuff, MessageFactory factory) {
+    super(readBuff, factory);
   }
 
   @Override

@@ -24,12 +24,12 @@ import org.vertx.java.core.eventbus.Message;
  */
 class ShortMessage extends BaseMessage<Short> {
 
-  ShortMessage(boolean send, String address, Short body) {
-    super(send, address, body);
+  public ShortMessage(boolean send, String address, Short message, MessageFactory factory) {
+    super(send, address, message, factory);
   }
 
-  public ShortMessage(Buffer readBuff) {
-    super(readBuff);
+  public ShortMessage(Buffer readBuff, MessageFactory factory) {
+    super(readBuff, factory);
   }
 
   @Override

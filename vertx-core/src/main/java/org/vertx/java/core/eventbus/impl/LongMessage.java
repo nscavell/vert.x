@@ -24,12 +24,12 @@ import org.vertx.java.core.eventbus.Message;
  */
 class LongMessage extends BaseMessage<Long> {
 
-  LongMessage(boolean send, String address, Long body) {
-    super(send, address, body);
+  public LongMessage(boolean send, String address, Long message, MessageFactory factory) {
+    super(send, address, message, factory);
   }
 
-  public LongMessage(Buffer readBuff) {
-    super(readBuff);
+  public LongMessage(Buffer readBuff, MessageFactory factory) {
+    super(readBuff, factory);
   }
 
   @Override

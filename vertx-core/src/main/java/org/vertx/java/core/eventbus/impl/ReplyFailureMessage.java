@@ -31,12 +31,12 @@ import org.vertx.java.core.eventbus.ReplyFailure;
  */
 public class ReplyFailureMessage extends BaseMessage<ReplyException> {
 
-  ReplyFailureMessage(String address, ReplyException body) {
-    super(true, address, body);
+  ReplyFailureMessage(String address, ReplyException body, MessageFactory factory) {
+    super(true, address, body, factory);
   }
 
-  public ReplyFailureMessage(Buffer readBuff) {
-    super(readBuff);
+  public ReplyFailureMessage(Buffer readBuff, MessageFactory factory) {
+    super(readBuff, factory);
   }
 
   private byte[] encoded;

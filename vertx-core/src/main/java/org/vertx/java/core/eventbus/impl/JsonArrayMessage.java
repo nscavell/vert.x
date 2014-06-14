@@ -28,19 +28,19 @@ class JsonArrayMessage extends BaseMessage<JsonArray> {
 
   private byte[] encoded;
 
-  JsonArrayMessage(boolean send, String address, JsonArray body) {
-    super(send, address, body);
+  public JsonArrayMessage(boolean send, String address, JsonArray message, MessageFactory factory) {
+    super(send, address, message, factory);
   }
 
   private JsonArrayMessage(JsonArrayMessage other) {
-    super(other.send, other.address, other.body == null ? null : other.body.copy());
+    super(other.send, other.address, other.body == null ? null : other.body.copy(), other.messageFactory);
     this.replyAddress = other.replyAddress;
     this.bus = other.bus;
     this.sender = other.sender;
   }
 
-  public JsonArrayMessage(Buffer readBuff) {
-    super(readBuff);
+  public JsonArrayMessage(Buffer readBuff, MessageFactory factory) {
+    super(readBuff, factory);
   }
 
   @Override

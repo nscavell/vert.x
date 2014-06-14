@@ -24,12 +24,12 @@ import org.vertx.java.core.eventbus.Message;
  */
 class DoubleMessage extends BaseMessage<Double> {
 
-  DoubleMessage(boolean send, String address, Double body) {
-    super(send, address, body);
+  public DoubleMessage(boolean send, String address, Double message, MessageFactory factory) {
+    super(send, address, message, factory);
   }
 
-  public DoubleMessage(Buffer readBuff) {
-    super(readBuff);
+  public DoubleMessage(Buffer readBuff, MessageFactory factory) {
+    super(readBuff, factory);
   }
 
   @Override

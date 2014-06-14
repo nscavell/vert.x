@@ -24,12 +24,12 @@ import org.vertx.java.core.eventbus.Message;
  */
 class BufferMessage extends BaseMessage<Buffer> {
 
-  BufferMessage(boolean send, String address, Buffer body) {
-    super(send, address, body);
+  public BufferMessage(boolean send, String address, Buffer message, MessageFactory factory) {
+    super(send, address, message, factory);
   }
 
-  public BufferMessage(Buffer readBuff) {
-    super(readBuff);
+  public BufferMessage(Buffer readBuff, MessageFactory factory) {
+    super(readBuff, factory);
   }
 
   @Override
@@ -62,7 +62,7 @@ class BufferMessage extends BaseMessage<Buffer> {
 
   @Override
   protected Message<Buffer> copy() {
-    BufferMessage copied = new BufferMessage(send, address, body == null ? null : body.copy());
+    BufferMessage copied = new BufferMessage(send, address, body == null ? null : body.copy(), messageFactory);
     copied.replyAddress = this.replyAddress;
     copied.bus = this.bus;
     copied.sender = this.sender;

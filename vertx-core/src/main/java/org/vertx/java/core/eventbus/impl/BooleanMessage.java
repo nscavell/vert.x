@@ -24,12 +24,12 @@ import org.vertx.java.core.eventbus.Message;
  */
 class BooleanMessage extends BaseMessage<Boolean> {
 
-  BooleanMessage(boolean send, String address, Boolean body) {
-    super(send, address, body);
+  public BooleanMessage(boolean send, String address, Boolean message, MessageFactory factory) {
+    super(send, address, message, factory);
   }
 
-  public BooleanMessage(Buffer readBuff) {
-    super(readBuff);
+  public BooleanMessage(Buffer readBuff, MessageFactory factory) {
+    super(readBuff, factory);
   }
 
   @Override

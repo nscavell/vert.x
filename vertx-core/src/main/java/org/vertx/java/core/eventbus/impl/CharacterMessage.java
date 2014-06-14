@@ -24,12 +24,12 @@ import org.vertx.java.core.eventbus.Message;
  */
 class CharacterMessage extends BaseMessage<Character> {
 
-  CharacterMessage(boolean send, String address, Character body) {
-    super(send, address, body);
+  public CharacterMessage(boolean send, String address, Character message, MessageFactory factory) {
+    super(send, address, message, factory);
   }
 
-  public CharacterMessage(Buffer readBuff) {
-    super(readBuff);
+  public CharacterMessage(Buffer readBuff, MessageFactory factory) {
+    super(readBuff, factory);
   }
 
   @Override

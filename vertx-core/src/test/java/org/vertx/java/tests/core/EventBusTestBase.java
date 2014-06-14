@@ -18,8 +18,10 @@ package org.vertx.java.tests.core;
 
 import org.junit.Test;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.eventbus.MessageCodec;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.core.shareddata.Shareable;
 
 import java.util.function.Consumer;
 
@@ -41,7 +43,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testSendNullString() {
-    testSendNull((String)null);
+    testSendNull((String) null);
   }
 
   @Test
@@ -63,7 +65,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testPublishNullString() {
-    testPublishNull((String)null);
+    testPublishNull((String) null);
   }
 
   @Test
@@ -78,7 +80,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testSendNullBoolean() {
-    testSendNull((Boolean)null);
+    testSendNull((Boolean) null);
   }
 
   @Test
@@ -122,7 +124,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testSendNullBuffer() {
-    testSendNull((Buffer)null);
+    testSendNull((Buffer) null);
   }
 
   @Test
@@ -150,7 +152,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testPublishNullBuffer() {
-    testPublishNull((Buffer)null);
+    testPublishNull((Buffer) null);
   }
 
   @Test
@@ -180,7 +182,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testPublishNullByte() {
-    testPublish((Byte)null);
+    testPublish((Byte) null);
   }
 
   @Test
@@ -194,7 +196,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testSendNullByteArray() {
-    testSendNull((byte[])null);
+    testSendNull((byte[]) null);
   }
 
   @Test
@@ -222,7 +224,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testPublishNullByteArray() {
-    testPublishNull((byte[])null);
+    testPublishNull((byte[]) null);
   }
 
   @Test
@@ -232,7 +234,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testSendNullCharacter() {
-    testSendNull((Character)null);
+    testSendNull((Character) null);
   }
 
   @Test
@@ -252,7 +254,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testPublishNullCharacter() {
-    testPublishNull((Character)null);
+    testPublishNull((Character) null);
   }
 
   @Test
@@ -262,7 +264,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testSendNullDouble() {
-    testSendNull((Double)null);
+    testSendNull((Double) null);
   }
 
   @Test
@@ -282,7 +284,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testPublishNullDouble() {
-    testPublishNull((Double)null);
+    testPublishNull((Double) null);
   }
 
   @Test
@@ -292,7 +294,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testSendNullFloat() {
-    testSendNull((Float)null);
+    testSendNull((Float) null);
   }
 
   @Test
@@ -312,7 +314,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testPublishNullFloat() {
-    testPublishNull((Float)null);
+    testPublishNull((Float) null);
   }
 
   @Test
@@ -322,7 +324,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testSendNullInteger() {
-    testSendNull((Integer)null);
+    testSendNull((Integer) null);
   }
 
   @Test
@@ -342,7 +344,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testPublishNullInteger() {
-    testPublishNull((Integer)null);
+    testPublishNull((Integer) null);
   }
 
   @Test
@@ -352,7 +354,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testSendNullLong() {
-    testSendNull((Long)null);
+    testSendNull((Long) null);
   }
 
   @Test
@@ -372,7 +374,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testPublishNullLong() {
-    testPublishNull((Long)null);
+    testPublishNull((Long) null);
   }
 
   @Test
@@ -382,7 +384,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testSendNullShort() {
-    testSendNull((Short)null);
+    testSendNull((Short) null);
   }
 
   @Test
@@ -402,7 +404,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testPublishNullShort() {
-    testPublishNull((Short)null);
+    testPublishNull((Short) null);
   }
 
   @Test
@@ -417,7 +419,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testSendNullJsonArray() {
-    testSendNull((JsonArray)null);
+    testSendNull((JsonArray) null);
   }
 
   @Test
@@ -447,7 +449,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testPublishNullJsonArray() {
-    testPublishNull((JsonArray)null);
+    testPublishNull((JsonArray) null);
   }
 
   @Test
@@ -462,7 +464,7 @@ public abstract class EventBusTestBase extends AsyncTestBase {
 
   @Test
   public void testSendNullJsonObject() {
-    testSendNull((JsonObject)null);
+    testSendNull((JsonObject) null);
   }
 
   @Test
@@ -518,4 +520,90 @@ public abstract class EventBusTestBase extends AsyncTestBase {
   protected abstract <T> void testPublishNull(T val) ;
 
   protected abstract <T> void testPublish(T val, Consumer<T> consumer);
+
+  protected static class SomePojo implements Cloneable {
+    private final String string;
+    private final int number;
+
+    protected SomePojo(String string, int number) {
+      this.string = string;
+      this.number = number;
+    }
+
+    public String string() {
+      return string;
+    }
+
+    public int number() {
+      return number;
+    }
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+      return super.clone();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      SomePojo pojo = (SomePojo) o;
+
+      if (number != pojo.number) return false;
+      if (!string.equals(pojo.string)) return false;
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      int result = string.hashCode();
+      result = 31 * result + number;
+      return result;
+    }
+
+    @Override
+    public String toString() {
+      return "SomePojo{" +
+        "string='" + string + '\'' +
+        ", number=" + number +
+        '}';
+    }
+  }
+
+  protected static class SomeShareablePojo extends SomePojo implements Shareable {
+    public SomeShareablePojo(String string, int number) {
+      super(string, number);
+    }
+    public SomeShareablePojo(SomePojo pojo) {
+      super(pojo.string, pojo.number);
+    }
+  }
+
+  protected static class SomePojoCodec implements MessageCodec<SomePojo> {
+    @Override
+    public Buffer encode(SomePojo pojo) {
+      return new Buffer().appendInt(pojo.number).appendString(pojo.string);
+    }
+
+    @Override
+    public SomePojo decode(Buffer buffer) {
+      return new SomePojo(buffer.getString(4, buffer.length()), buffer.getInt(0));
+    }
+  }
+
+  //TODO: Do we allow base class registration for codecs
+  protected static class SomeShareablePojoCodec implements MessageCodec<SomeShareablePojo> {
+    private SomePojoCodec codec = new SomePojoCodec();
+    @Override
+    public Buffer encode(SomeShareablePojo object) {
+      return codec.encode(object);
+    }
+
+    @Override
+    public SomeShareablePojo decode(Buffer buffer) {
+      return new SomeShareablePojo(codec.decode(buffer));
+    }
+  }
 }

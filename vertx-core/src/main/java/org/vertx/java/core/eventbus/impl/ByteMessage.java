@@ -24,12 +24,12 @@ import org.vertx.java.core.eventbus.Message;
  */
 class ByteMessage extends BaseMessage<Byte> {
 
-  ByteMessage(boolean send, String address, Byte body) {
-    super(send, address, body);
+  public ByteMessage(boolean send, String address, Byte message, MessageFactory factory) {
+    super(send, address, message, factory);
   }
 
-  public ByteMessage(Buffer readBuff) {
-    super(readBuff);
+  public ByteMessage(Buffer readBuff, MessageFactory factory) {
+    super(readBuff, factory);
   }
 
   @Override
