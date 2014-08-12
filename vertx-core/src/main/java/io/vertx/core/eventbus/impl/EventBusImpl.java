@@ -21,6 +21,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.EventBusReadStream;
+import io.vertx.core.eventbus.EventBusWriteStream;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.Registration;
@@ -143,6 +145,21 @@ public class EventBusImpl implements EventBus {
   @Override
   public <T> Registration registerLocalHandler(String address, Handler<Message<T>> handler) {
     return registerHandler(address, handler, false, true, -1);
+  }
+
+  @Override
+  public EventBusReadStream readStream(String address) {
+    return new EventBusReadStreamImpl(this, address);
+  }
+
+  @Override
+  public EventBusWriteStream writeStream(String address) {
+    return new EventBusWriteStreamImpl(this, address);
+  }
+
+  @Override
+  public EventBusWriteStream writeStream(String address, int maxBufferSize) {
+    return new EventBusWriteStreamImpl(this, address, maxBufferSize);
   }
 
   @Override

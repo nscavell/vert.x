@@ -114,6 +114,22 @@ public interface EventBus {
   <T> Registration registerLocalHandler(String address, Handler<Message<T>> handler);
 
   /**
+   * Creates an {@link EventBusReadStream} at the specified address, which can be used in things
+   * like {@link io.vertx.core.streams.Pump} to provide flow control.
+   *
+   * @param address the address the data will be received on
+   * @return an <code>EventBusReadStream</code>
+   */
+  @GenIgnore
+  EventBusReadStream readStream(String address);
+
+  @GenIgnore
+  EventBusWriteStream writeStream(String address);
+
+  @GenIgnore
+  EventBusWriteStream writeStream(String address, int maxBufferSize);
+
+  /**
    * Sets a default timeout, in ms, for replies. If a messages is sent specify a reply handler
    * but without specifying a timeout, then the reply handler is timed out, i.e. it is automatically unregistered
    * if a message hasn't been received before timeout.
